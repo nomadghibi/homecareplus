@@ -16,7 +16,8 @@ import {
   Star,
   TrendingUp,
   Clock,
-  Award
+  Award,
+  UserCheck
 } from "lucide-react";
 
 export default function Landing() {
@@ -41,15 +42,22 @@ export default function Landing() {
               </div>
 
               {/* Desktop Menu */}
-              <div className="hidden md:flex items-center gap-8">
+              <div className="hidden md:flex items-center gap-4">
                 <a href="#features" className="text-slate-700 hover:text-teal-600 transition-colors font-medium">Features</a>
+                <Link to={createPageUrl("Pricing")} className="text-slate-700 hover:text-teal-600 transition-colors font-medium">Pricing</Link>
                 <a href="#stats" className="text-slate-700 hover:text-teal-600 transition-colors font-medium">Why Us</a>
                 <a href="#testimonials" className="text-slate-700 hover:text-teal-600 transition-colors font-medium">Reviews</a>
                 <Link to={createPageUrl("AgencyLogin")}>
-                  <Button variant="outline" className="border-2 hover:border-teal-500 hover:text-teal-600">Agency Login</Button>
+                  <Button variant="outline" className="border-2 hover:border-teal-500 hover:text-teal-600">Agency</Button>
+                </Link>
+                <Link to={createPageUrl("CaregiverLogin")}>
+                  <Button variant="outline" className="border-2 hover:border-purple-500 hover:text-purple-600">
+                    <UserCheck className="w-4 h-4 mr-1" />
+                    Caregiver
+                  </Button>
                 </Link>
                 <Link to={createPageUrl("FamilyLogin")}>
-                  <Button className="bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 shadow-lg shadow-teal-500/50">Family Portal</Button>
+                  <Button className="bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-600 hover:to-blue-700 shadow-lg shadow-teal-500/50">Family</Button>
                 </Link>
               </div>
 
@@ -68,10 +76,17 @@ export default function Landing() {
             <div className="md:hidden border-t border-slate-200 bg-white/95 backdrop-blur-xl">
               <div className="px-4 py-4 space-y-3">
                 <a href="#features" className="block py-2 text-slate-700 font-medium">Features</a>
+                <Link to={createPageUrl("Pricing")} className="block py-2 text-slate-700 font-medium">Pricing</Link>
                 <a href="#stats" className="block py-2 text-slate-700 font-medium">Why Us</a>
                 <a href="#testimonials" className="block py-2 text-slate-700 font-medium">Reviews</a>
                 <Link to={createPageUrl("AgencyLogin")} className="block">
                   <Button variant="outline" className="w-full">Agency Login</Button>
+                </Link>
+                <Link to={createPageUrl("CaregiverLogin")} className="block">
+                  <Button variant="outline" className="w-full border-2 border-purple-500 text-purple-600">
+                    <UserCheck className="w-4 h-4 mr-2" />
+                    Caregiver Login
+                  </Button>
                 </Link>
                 <Link to={createPageUrl("FamilyLogin")} className="block">
                   <Button className="w-full bg-gradient-to-r from-teal-500 to-blue-600">Family Portal</Button>

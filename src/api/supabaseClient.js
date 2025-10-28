@@ -28,7 +28,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Helper function to handle Supabase errors
 export function handleSupabaseError(error) {
-  console.error('Supabase Error:', error);
+  console.error('Supabase Error Details:', {
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+    code: error.code,
+    fullError: error
+  });
 
   if (error.code === 'PGRST116') {
     throw new Error('No data found');
@@ -40,6 +46,10 @@ export function handleSupabaseError(error) {
 
   if (error.code === '23503') {
     throw new Error('Related record not found');
+  }
+
+  if (error.code === '42703') {
+    throw new Error('Invalid column name - database field does not exist');
   }
 
   throw new Error(error.message || 'An error occurred with the database');

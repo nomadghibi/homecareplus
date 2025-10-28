@@ -42,7 +42,7 @@ export default function Documents() {
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['documents'],
-    queryFn: () => base44.entities.Document.list('-created_date'),
+    queryFn: () => base44.entities.Document.list('-created_at'),
   });
 
   const { data: clients = [] } = useQuery({

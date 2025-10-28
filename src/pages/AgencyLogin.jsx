@@ -49,6 +49,17 @@ export default function AgencyLogin() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Check localStorage first
+        const isAuth = localStorage.getItem('isAuthenticated');
+        const currentUser = localStorage.getItem('currentUser');
+
+        if (isAuth === 'true' && currentUser) {
+          setIsAuthenticated(true);
+          navigate(createPageUrl("Dashboard"), { replace: true });
+          return;
+        }
+
+        // Fallback to base44 auth
         const authenticated = await base44.auth.isAuthenticated();
         if (authenticated) {
           setIsAuthenticated(true);
@@ -133,6 +144,40 @@ export default function AgencyLogin() {
     setError("");
 
     try {
+      // Check persistent user registry for registered accounts
+      const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+
+      // Find user by email (case insensitive)
+      const foundUser = registeredUsers.find(
+        user => user.email.toLowerCase() === email.toLowerCase()
+      );
+
+      if (foundUser) {
+        // Verify password (in production, this would compare against a hash)
+        if (foundUser.password === password) {
+          toast.success("Welcome back! Redirecting to dashboard...");
+
+          // Create session by setting currentUser and isAuthenticated
+          localStorage.setItem('currentUser', JSON.stringify(foundUser));
+          localStorage.setItem('isAuthenticated', 'true');
+
+          // Save to localStorage if remember me is checked
+          if (rememberMe) {
+            localStorage.setItem("rememberMe", "true");
+            localStorage.setItem("userEmail", email);
+          }
+
+          setTimeout(() => {
+            navigate(createPageUrl("Dashboard"), { replace: true });
+          }, 1000);
+          return;
+        } else {
+          // Wrong password
+          throw new Error("Invalid password");
+        }
+      }
+
+      // Fallback to base44 auth for existing users
       const result = await base44.auth.login({ email, password });
 
       if (result.success) {
@@ -150,8 +195,8 @@ export default function AgencyLogin() {
       }
     } catch (error) {
       console.error("Login error:", error);
-      setError(error.message || "Invalid credentials. Please try again.");
-      toast.error(error.message || "Login failed");
+      setError("Invalid credentials. Please check your email and password.");
+      toast.error("Invalid credentials. Please try again.");
       setLoading(false);
     }
   };

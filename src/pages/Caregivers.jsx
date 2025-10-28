@@ -4,21 +4,25 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, 
-  Search, 
-  UserCheck, 
-  Phone, 
-  Mail, 
+import {
+  Plus,
+  Search,
+  UserCheck,
+  Phone,
+  Mail,
   Calendar,
   Award,
   Edit,
   MapPin,
   DollarSign,
-  Clock
+  Clock,
+  Send,
+  Copy
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
+import { toast } from "sonner";
+import { createPageUrl } from "@/utils";
 import CaregiverForm from "../components/caregivers/CaregiverForm";
 import CaregiverDetails from "../components/caregivers/CaregiverDetails";
 
@@ -31,34 +35,241 @@ export default function Caregivers() {
 
   const { data: caregivers = [], isLoading } = useQuery({
     queryKey: ['caregivers'],
-    queryFn: () => base44.entities.Caregiver.list('-created_date'),
+    queryFn: () => base44.entities.Caregiver.list('-created_at'),
   });
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Caregiver.create(data),
-    onSuccess: () => {
+    onSuccess: (newCaregiver) => {
+      console.log('Caregiver created successfully:', newCaregiver);
       queryClient.invalidateQueries(['caregivers']);
       setShowForm(false);
       setEditingCaregiver(null);
+
+      // Automatically create portal invitation for new caregiver
+      if (newCaregiver && newCaregiver.email) {
+        console.log('Creating invitation for:', newCaregiver.email);
+        const inviteUrl = createInvitation(newCaregiver, false);
+
+        // Show success message first
+        toast.success('Caregiver added successfully!', {
+          description: `${newCaregiver.first_name} ${newCaregiver.last_name} has been added to your team`,
+          duration: 3000
+        });
+
+        // Then show the invitation link with prominent action button
+        setTimeout(() => {
+          toast.info('Portal Invitation Created', {
+            description: `Send this link to ${newCaregiver.first_name} to set up their portal account`,
+            action: {
+              label: 'Copy Invite Link',
+              onClick: () => {
+                navigator.clipboard.writeText(inviteUrl).then(() => {
+                  toast.success('Invitation link copied to clipboard!', {
+                    description: `Share this with ${newCaregiver.first_name} via email, text, or any messaging app`,
+                    duration: 5000
+                  });
+                }).catch(() => {
+                  toast.error('Failed to copy link', {
+                    description: 'Please copy the link from the console below',
+                    duration: 5000
+                  });
+                });
+              }
+            },
+            duration: 15000, // Show for 15 seconds
+            important: true
+          });
+        }, 500);
+
+        // Also log the invitation URL to console for easy access
+        console.log('='.repeat(60));
+        console.log('PORTAL INVITATION CREATED');
+        console.log('Caregiver:', `${newCaregiver.first_name} ${newCaregiver.last_name}`);
+        console.log('Email:', newCaregiver.email);
+        console.log('Invitation URL:', inviteUrl);
+        console.log('='.repeat(60));
+      } else {
+        console.log('No email found on caregiver, skipping invitation');
+        toast.success('Caregiver added successfully!');
+      }
     },
+    onError: (error) => {
+      console.error('Create caregiver error:', error);
+      if (error.message.includes('duplicate key') || error.message.includes('Duplicate entry')) {
+        toast.error('Email already exists', {
+          description: 'A caregiver with this email address already exists in the system.'
+        });
+      } else {
+        toast.error('Failed to add caregiver', {
+          description: error.message || 'Please try again.'
+        });
+      }
+    }
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Caregiver.update(id, data),
-    onSuccess: () => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries(['caregivers']);
+
+      // Sync status changes to caregiver user registry
+      if (variables.data.status) {
+        const caregiverUsers = JSON.parse(localStorage.getItem('caregiverUsers') || '[]');
+        const userIndex = caregiverUsers.findIndex(user => user.id === variables.id);
+
+        if (userIndex !== -1) {
+          caregiverUsers[userIndex].status = variables.data.status;
+          localStorage.setItem('caregiverUsers', JSON.stringify(caregiverUsers));
+
+          // If the caregiver is currently logged in and was set to inactive, log them out
+          const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+          if (currentUser.id === variables.id && variables.data.status === 'inactive') {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('isAuthenticated');
+            toast.info('Caregiver has been logged out due to status change');
+          }
+        }
+      }
+
       setShowForm(false);
       setEditingCaregiver(null);
       setSelectedCaregiver(null);
+      toast.success('Caregiver updated successfully!');
     },
+    onError: (error) => {
+      console.error('Update caregiver error:', error);
+      if (error.message.includes('duplicate key') || error.message.includes('Duplicate entry')) {
+        toast.error('Email already exists', {
+          description: 'A caregiver with this email address already exists in the system.'
+        });
+      } else {
+        toast.error('Failed to update caregiver', {
+          description: error.message || 'Please try again.'
+        });
+      }
+    }
   });
 
-  const handleSubmit = (data) => {
-    if (editingCaregiver) {
-      updateMutation.mutate({ id: editingCaregiver.id, data });
-    } else {
-      createMutation.mutate(data);
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Caregiver.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['caregivers']);
+      setSelectedCaregiver(null);
+      toast.success('Caregiver deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Delete caregiver error:', error);
+      toast.error('Failed to delete caregiver', {
+        description: error.message || 'Please try again.'
+      });
     }
+  });
+
+  const handleDelete = (id) => {
+    deleteMutation.mutate(id);
+  };
+
+  const handleSubmit = (data) => {
+    console.log('Submitting caregiver data:', data);
+
+    // Clean up the data - remove any undefined/null values and ensure proper format
+    const cleanData = {
+      first_name: data.first_name || '',
+      last_name: data.last_name || '',
+      email: data.email || '',
+      phone: data.phone || '',
+      status: data.status || 'active',
+      certifications: data.certifications || [],
+      skills: data.skills || [],
+      license_number: data.license_number || '',
+      license_expiry: data.license_expiry || null,
+      hire_date: data.hire_date || new Date().toISOString().split('T')[0],
+      hourly_rate: data.hourly_rate ? parseFloat(data.hourly_rate) : null,
+      max_hours_per_week: data.max_hours_per_week ? parseInt(data.max_hours_per_week) : 40,
+      employment_type: data.employment_type || 'Full-time',
+      address: data.address || '',
+      city: data.city || '',
+      state: data.state || '',
+      zip_code: data.zip_code || '',
+      notes: data.notes || ''
+    };
+
+    console.log('Cleaned caregiver data:', cleanData);
+
+    if (editingCaregiver) {
+      updateMutation.mutate({ id: editingCaregiver.id, data: cleanData });
+    } else {
+      createMutation.mutate(cleanData);
+    }
+  };
+
+  const createInvitation = (caregiver, showToast = true) => {
+    // Generate invitation token
+    const token = `invite_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // Expires in 7 days
+
+    // Get current agency info
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const agencyName = currentUser.organizationName || currentUser.agencyName || 'Your Agency';
+
+    // Create invitation
+    const invitation = {
+      token,
+      email: caregiver.email,
+      caregiverId: caregiver.id,
+      firstName: caregiver.first_name,
+      lastName: caregiver.last_name,
+      phone: caregiver.phone,
+      status: caregiver.status,
+      agencyId: currentUser.id,
+      agencyName,
+      createdAt: new Date().toISOString(),
+      expiresAt: expiresAt.toISOString()
+    };
+
+    // Store invitation
+    const pendingInvites = JSON.parse(localStorage.getItem('pendingCaregiverInvites') || '[]');
+    pendingInvites.push(invitation);
+    localStorage.setItem('pendingCaregiverInvites', JSON.stringify(pendingInvites));
+
+    // Generate invitation URL
+    const inviteUrl = `${window.location.origin}${createPageUrl('CaregiverSetup')}?token=${token}&email=${encodeURIComponent(caregiver.email)}`;
+
+    // In production, you would also send an email here
+    console.log('Invitation created:', invitation);
+    console.log('Invitation URL:', inviteUrl);
+
+    if (showToast) {
+      // Copy to clipboard
+      navigator.clipboard.writeText(inviteUrl).then(() => {
+        toast.success('Invitation link copied!', {
+          description: `Share this link with ${caregiver.first_name} to set up their account`,
+          action: {
+            label: 'View Link',
+            onClick: () => {
+              toast.info('Invitation Link', {
+                description: inviteUrl,
+                duration: 10000
+              });
+            }
+          }
+        });
+      }).catch(() => {
+        toast.success('Invitation created!', {
+          description: inviteUrl,
+          duration: 10000
+        });
+      });
+    }
+
+    return inviteUrl;
+  };
+
+  const handleSendInvite = (caregiver, e) => {
+    e.stopPropagation();
+    createInvitation(caregiver, true);
   };
 
   const filteredCaregivers = caregivers.filter(caregiver => {
@@ -67,7 +278,7 @@ export default function Caregivers() {
       caregiver.first_name?.toLowerCase().includes(searchLower) ||
       caregiver.last_name?.toLowerCase().includes(searchLower) ||
       caregiver.email?.toLowerCase().includes(searchLower) ||
-      caregiver.employee_id?.toLowerCase().includes(searchLower)
+      caregiver.phone?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -117,7 +328,7 @@ export default function Caregivers() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
             <Input
-              placeholder="Search caregivers by name, email, or employee ID..."
+              placeholder="Search caregivers by name, email, or phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-12"
@@ -146,6 +357,7 @@ export default function Caregivers() {
             setEditingCaregiver(caregiver);
             setShowForm(true);
           }}
+          onDelete={handleDelete}
         />
       )}
 
@@ -209,25 +421,32 @@ export default function Caregivers() {
                         )}
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingCaregiver(caregiver);
-                        setShowForm(true);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => handleSendInvite(caregiver, e)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Send portal invitation"
+                      >
+                        <Send className="w-4 h-4 text-purple-600" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingCaregiver(caregiver);
+                          setShowForm(true);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-4 space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Award className="w-4 h-4 text-slate-400" />
-                    <span className="font-medium">{caregiver.employee_id}</span>
-                  </div>
                   {caregiver.phone && (
                     <div className="flex items-center gap-2 text-sm text-slate-600">
                       <Phone className="w-4 h-4 text-slate-400" />

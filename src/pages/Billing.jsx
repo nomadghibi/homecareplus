@@ -257,7 +257,9 @@ export default function Billing() {
                           </div>
                           <div>
                             <span className="text-slate-500">Service:</span>{' '}
-                            {format(new Date(claim.service_date_from), 'MMM d, yyyy')}
+                            {claim.service_date_from
+                              ? format(new Date(claim.service_date_from), 'MMM d, yyyy')
+                              : 'N/A'}
                           </div>
                           {claim.submission_date && (
                             <div className="flex items-center gap-1">

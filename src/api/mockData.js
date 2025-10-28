@@ -555,3 +555,206 @@ export const mockStats = {
   totalRevenue: 145650,
   monthlyGrowth: 12.5
 };
+
+// Pricing Strategies
+export const mockPricingStrategies = {
+  strategies: [
+    {
+      id: "11111111-1111-1111-1111-111111111111",
+      name: "Standard Private Pay",
+      description: "Default pricing for private pay clients",
+      strategy_type: "private_pay",
+      is_active: true,
+      is_default: true,
+      effective_date: "2024-01-01",
+      expiration_date: null,
+      created_at: "2024-01-01T00:00:00.000Z",
+      updated_at: "2024-01-01T00:00:00.000Z"
+    },
+    {
+      id: "22222222-2222-2222-2222-222222222222",
+      name: "Medicare Fee Schedule",
+      description: "Medicare approved rates and guidelines",
+      strategy_type: "medicare",
+      is_active: true,
+      is_default: false,
+      effective_date: "2024-01-01",
+      expiration_date: null,
+      created_at: "2024-01-01T00:00:00.000Z",
+      updated_at: "2024-01-01T00:00:00.000Z"
+    },
+    {
+      id: "33333333-3333-3333-3333-333333333333",
+      name: "Medicaid Fee Schedule",
+      description: "State Medicaid rates for home care services",
+      strategy_type: "medicaid",
+      is_active: true,
+      is_default: false,
+      effective_date: "2024-01-01",
+      expiration_date: null,
+      created_at: "2024-01-01T00:00:00.000Z",
+      updated_at: "2024-01-01T00:00:00.000Z"
+    },
+    {
+      id: "44444444-4444-4444-4444-444444444444",
+      name: "Premium Care Package",
+      description: "Premium rates for enhanced concierge-level services",
+      strategy_type: "premium",
+      is_active: true,
+      is_default: false,
+      effective_date: "2024-01-01",
+      expiration_date: null,
+      created_at: "2024-01-01T00:00:00.000Z",
+      updated_at: "2024-01-01T00:00:00.000Z"
+    }
+  ],
+
+  serviceRates: [
+    // Standard Private Pay Rates
+    { id: "sr-1", pricing_strategy_id: "11111111-1111-1111-1111-111111111111", service_type: "personal_care", service_name: "Personal Care Services", hourly_rate: 35.00, minimum_hours: 2, minimum_charge: 70.00, billing_increment_minutes: 15 },
+    { id: "sr-2", pricing_strategy_id: "11111111-1111-1111-1111-111111111111", service_type: "companionship", service_name: "Companionship", hourly_rate: 28.00, minimum_hours: 2, minimum_charge: 56.00, billing_increment_minutes: 15 },
+    { id: "sr-3", pricing_strategy_id: "11111111-1111-1111-1111-111111111111", service_type: "medication_management", service_name: "Medication Management", hourly_rate: 40.00, minimum_hours: 1, minimum_charge: 40.00, billing_increment_minutes: 15 },
+    { id: "sr-4", pricing_strategy_id: "11111111-1111-1111-1111-111111111111", service_type: "skilled_nursing", service_name: "Skilled Nursing (RN)", hourly_rate: 75.00, minimum_hours: 1, minimum_charge: 75.00, billing_increment_minutes: 15 },
+    { id: "sr-5", pricing_strategy_id: "11111111-1111-1111-1111-111111111111", service_type: "physical_therapy", service_name: "Physical Therapy", hourly_rate: 85.00, minimum_hours: 1, minimum_charge: 85.00, billing_increment_minutes: 15 },
+    { id: "sr-6", pricing_strategy_id: "11111111-1111-1111-1111-111111111111", service_type: "respite_care", service_name: "Respite Care", hourly_rate: 32.00, minimum_hours: 4, minimum_charge: 128.00, billing_increment_minutes: 30 },
+    { id: "sr-7", pricing_strategy_id: "11111111-1111-1111-1111-111111111111", service_type: "meal_preparation", service_name: "Meal Preparation", hourly_rate: 30.00, minimum_hours: 1, minimum_charge: 30.00, billing_increment_minutes: 15 },
+    { id: "sr-8", pricing_strategy_id: "11111111-1111-1111-1111-111111111111", service_type: "transportation", service_name: "Transportation Services", hourly_rate: 25.00, minimum_hours: 1, minimum_charge: 25.00, billing_increment_minutes: 30 },
+    { id: "sr-9", pricing_strategy_id: "11111111-1111-1111-1111-111111111111", service_type: "homemaking", service_name: "Homemaking Services", hourly_rate: 28.00, minimum_hours: 2, minimum_charge: 56.00, billing_increment_minutes: 15 },
+
+    // Medicare Rates (typically lower)
+    { id: "sr-10", pricing_strategy_id: "22222222-2222-2222-2222-222222222222", service_type: "personal_care", service_name: "Personal Care Services", hourly_rate: 28.50, minimum_hours: 1, minimum_charge: 28.50, billing_increment_minutes: 15 },
+    { id: "sr-11", pricing_strategy_id: "22222222-2222-2222-2222-222222222222", service_type: "skilled_nursing", service_name: "Skilled Nursing (RN)", hourly_rate: 65.00, minimum_hours: 1, minimum_charge: 65.00, billing_increment_minutes: 15 },
+    { id: "sr-12", pricing_strategy_id: "22222222-2222-2222-2222-222222222222", service_type: "physical_therapy", service_name: "Physical Therapy", hourly_rate: 72.00, minimum_hours: 1, minimum_charge: 72.00, billing_increment_minutes: 15 },
+
+    // Medicaid Rates (lowest)
+    { id: "sr-13", pricing_strategy_id: "33333333-3333-3333-3333-333333333333", service_type: "personal_care", service_name: "Personal Care Services", hourly_rate: 22.75, minimum_hours: 1, minimum_charge: 22.75, billing_increment_minutes: 15 },
+    { id: "sr-14", pricing_strategy_id: "33333333-3333-3333-3333-333333333333", service_type: "companionship", service_name: "Companionship", hourly_rate: 18.50, minimum_hours: 2, minimum_charge: 37.00, billing_increment_minutes: 15 },
+    { id: "sr-15", pricing_strategy_id: "33333333-3333-3333-3333-333333333333", service_type: "respite_care", service_name: "Respite Care", hourly_rate: 25.00, minimum_hours: 4, minimum_charge: 100.00, billing_increment_minutes: 30 },
+
+    // Premium Rates (highest)
+    { id: "sr-16", pricing_strategy_id: "44444444-4444-4444-4444-444444444444", service_type: "personal_care", service_name: "Premium Personal Care", hourly_rate: 55.00, minimum_hours: 2, minimum_charge: 110.00, billing_increment_minutes: 15 },
+    { id: "sr-17", pricing_strategy_id: "44444444-4444-4444-4444-444444444444", service_type: "companionship", service_name: "Premium Companionship", hourly_rate: 45.00, minimum_hours: 2, minimum_charge: 90.00, billing_increment_minutes: 15 },
+    { id: "sr-18", pricing_strategy_id: "44444444-4444-4444-4444-444444444444", service_type: "skilled_nursing", service_name: "Premium Skilled Nursing", hourly_rate: 95.00, minimum_hours: 1, minimum_charge: 95.00, billing_increment_minutes: 15 }
+  ],
+
+  rateModifiers: [
+    {
+      id: "rm-1",
+      pricing_strategy_id: "11111111-1111-1111-1111-111111111111",
+      modifier_name: "Weekend Premium",
+      modifier_type: "weekend",
+      applies_to_service_types: null, // applies to all
+      multiplier: 1.25,
+      flat_amount: null,
+      start_time: null,
+      end_time: null,
+      days_of_week: [0, 6], // Sunday and Saturday
+      is_active: true,
+      priority: 1
+    },
+    {
+      id: "rm-2",
+      pricing_strategy_id: "11111111-1111-1111-1111-111111111111",
+      modifier_name: "Evening Rate (6PM-10PM)",
+      modifier_type: "evening",
+      applies_to_service_types: null,
+      multiplier: 1.15,
+      flat_amount: null,
+      start_time: "18:00:00",
+      end_time: "22:00:00",
+      days_of_week: null, // applies to all days
+      is_active: true,
+      priority: 2
+    },
+    {
+      id: "rm-3",
+      pricing_strategy_id: "11111111-1111-1111-1111-111111111111",
+      modifier_name: "Night Rate (10PM-6AM)",
+      modifier_type: "night",
+      applies_to_service_types: null,
+      multiplier: 1.35,
+      flat_amount: null,
+      start_time: "22:00:00",
+      end_time: "06:00:00",
+      days_of_week: null,
+      is_active: true,
+      priority: 3
+    },
+    {
+      id: "rm-4",
+      pricing_strategy_id: "11111111-1111-1111-1111-111111111111",
+      modifier_name: "Holiday Premium",
+      modifier_type: "holiday",
+      applies_to_service_types: null,
+      multiplier: 1.50,
+      flat_amount: null,
+      start_time: null,
+      end_time: null,
+      days_of_week: null,
+      is_active: true,
+      priority: 4
+    },
+    {
+      id: "rm-5",
+      pricing_strategy_id: "11111111-1111-1111-1111-111111111111",
+      modifier_name: "Emergency Call (< 24hr notice)",
+      modifier_type: "emergency",
+      applies_to_service_types: null,
+      multiplier: 1.40,
+      flat_amount: null,
+      start_time: null,
+      end_time: null,
+      days_of_week: null,
+      is_active: true,
+      priority: 5
+    }
+  ],
+
+  mileageRates: [
+    {
+      id: "mr-1",
+      pricing_strategy_id: "11111111-1111-1111-1111-111111111111",
+      rate_per_mile: 0.6550,
+      minimum_billable_miles: 5.0,
+      maximum_billable_miles: null,
+      applies_to_service_types: null,
+      effective_date: "2024-01-01",
+      expiration_date: null,
+      notes: "IRS standard mileage rate for 2024"
+    },
+    {
+      id: "mr-2",
+      pricing_strategy_id: "22222222-2222-2222-2222-222222222222",
+      rate_per_mile: 0.5800,
+      minimum_billable_miles: 10.0,
+      maximum_billable_miles: 50.0,
+      applies_to_service_types: null,
+      effective_date: "2024-01-01",
+      expiration_date: null,
+      notes: "Medicare allowed mileage rate"
+    },
+    {
+      id: "mr-3",
+      pricing_strategy_id: "33333333-3333-3333-3333-333333333333",
+      rate_per_mile: 0.5000,
+      minimum_billable_miles: 10.0,
+      maximum_billable_miles: 40.0,
+      applies_to_service_types: null,
+      effective_date: "2024-01-01",
+      expiration_date: null,
+      notes: "State Medicaid mileage reimbursement"
+    }
+  ],
+
+  payerFeeSchedules: [
+    // Medicare
+    { id: "pfs-1", pricing_strategy_id: "22222222-2222-2222-2222-222222222222", payer_name: "Medicare", service_type: "personal_care", procedure_code: "T1019", allowed_amount: 28.50, unit_type: "hour", max_units_per_day: 8, effective_date: "2024-01-01" },
+    { id: "pfs-2", pricing_strategy_id: "22222222-2222-2222-2222-222222222222", payer_name: "Medicare", service_type: "skilled_nursing", procedure_code: "G0299", allowed_amount: 65.00, unit_type: "hour", max_units_per_day: 4, effective_date: "2024-01-01" },
+    { id: "pfs-3", pricing_strategy_id: "22222222-2222-2222-2222-222222222222", payer_name: "Medicare", service_type: "physical_therapy", procedure_code: "G0151", allowed_amount: 72.00, unit_type: "hour", max_units_per_day: 3, effective_date: "2024-01-01" },
+
+    // Medicaid
+    { id: "pfs-4", pricing_strategy_id: "33333333-3333-3333-3333-333333333333", payer_name: "Medicaid", service_type: "personal_care", procedure_code: null, allowed_amount: 22.75, unit_type: "hour", max_units_per_day: 10, effective_date: "2024-01-01" },
+    { id: "pfs-5", pricing_strategy_id: "33333333-3333-3333-3333-333333333333", payer_name: "Medicaid", service_type: "companionship", procedure_code: null, allowed_amount: 18.50, unit_type: "hour", max_units_per_day: 8, effective_date: "2024-01-01" },
+    { id: "pfs-6", pricing_strategy_id: "33333333-3333-3333-3333-333333333333", payer_name: "Medicaid", service_type: "respite_care", procedure_code: null, allowed_amount: 25.00, unit_type: "hour", max_units_per_day: 12, effective_date: "2024-01-01" }
+  ]
+};

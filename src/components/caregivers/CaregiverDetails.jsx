@@ -2,19 +2,20 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Edit, Phone, Mail, MapPin, Calendar, Award, DollarSign, Clock, FileText, Upload, Eye, Download } from "lucide-react";
+import { X, Edit, Phone, Mail, MapPin, Calendar, Award, DollarSign, Clock, FileText, Upload, Eye, Download, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import DocumentUpload from "../documents/DocumentUpload";
 
-export default function CaregiverDetails({ caregiver, onClose, onEdit }) {
+export default function CaregiverDetails({ caregiver, onClose, onEdit, onDelete }) {
   const [showUpload, setShowUpload] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Fetch caregiver's documents
   const { data: allDocuments = [] } = useQuery({
     queryKey: ['documents'],
-    queryFn: () => base44.entities.Document.list('-created_date'),
+    queryFn: () => base44.entities.Document.list('-created_at'),
   });
 
   const caregiverDocuments = allDocuments.filter(doc => 
@@ -47,6 +48,14 @@ export default function CaregiverDetails({ caregiver, onClose, onEdit }) {
               <Button variant="outline" onClick={() => onEdit(caregiver)}>
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
+              </Button>
+              <Button
+                variant="outline"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
               </Button>
               <Button variant="ghost" size="icon" onClick={onClose}>
                 <X className="w-5 h-5" />
@@ -264,6 +273,50 @@ export default function CaregiverDetails({ caregiver, onClose, onEdit }) {
           caregivers={[caregiver]}
           preselectedEntity={{ type: 'caregiver', id: caregiver.id }}
         />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60]">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle className="text-xl text-red-600 flex items-center gap-2">
+                <Trash2 className="w-5 h-5" />
+                Delete Caregiver?
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-slate-600">
+                Are you sure you want to delete <strong>{caregiver.first_name} {caregiver.last_name}</strong>?
+                This action cannot be undone.
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-800">
+                  ⚠️ This will permanently remove all caregiver data and associated records.
+                </p>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    onDelete(caregiver.id);
+                    setShowDeleteConfirm(false);
+                  }}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Permanently
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

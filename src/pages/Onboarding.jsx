@@ -46,18 +46,37 @@ export default function Onboarding() {
   const handleComplete = async () => {
     setLoading(true);
     try {
-      await base44.auth.updateMe({
-        agency_info: agencyData,
-        onboarding_completed: true
-      });
+      // Simulate API call for onboarding completion
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // TODO: Replace with actual API call when backend is ready
+      // await fetch('/api/onboarding/complete', {
+      //   method: 'POST',
+      //   body: JSON.stringify({
+      //     agency_info: agencyData,
+      //     onboarding_completed: true
+      //   })
+      // });
+
+      // Save to localStorage for now
+      localStorage.setItem('agency_info', JSON.stringify(agencyData));
+      localStorage.setItem('onboarding_completed', 'true');
+
+      // Update current user with onboarding completion
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      currentUser.onboardingCompleted = true;
+      currentUser.agencyInfo = agencyData;
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
       toast({
-        title: "Welcome to HomeCare+!",
+        title: "Welcome to Care Connect Pro!",
         description: "Your agency has been successfully set up.",
       });
 
       // Navigate to dashboard after successful completion
-      navigate(createPageUrl("Dashboard"), { replace: true });
+      setTimeout(() => {
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      }, 500);
     } catch (error) {
       console.error("Onboarding error:", error);
       toast({

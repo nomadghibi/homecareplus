@@ -14,15 +14,15 @@ export default function CaregiverForm({ caregiver, onSubmit, onCancel, isLoading
     last_name: "",
     email: "",
     phone: "",
-    employee_id: "",
     status: "active",
     certifications: [],
-    specializations: [],
+    skills: [], // Changed from specializations to match DB schema
     license_number: "",
     license_expiry: "",
     hire_date: "",
     hourly_rate: "",
     max_hours_per_week: 40,
+    employment_type: "Full-time", // Added - required in schema
     address: "",
     city: "",
     state: "",
@@ -31,7 +31,7 @@ export default function CaregiverForm({ caregiver, onSubmit, onCancel, isLoading
   });
 
   const [newCertification, setNewCertification] = useState("");
-  const [newSpecialization, setNewSpecialization] = useState("");
+  const [newSkill, setNewSkill] = useState(""); // Changed from newSpecialization
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -54,20 +54,20 @@ export default function CaregiverForm({ caregiver, onSubmit, onCancel, isLoading
     }));
   };
 
-  const addSpecialization = () => {
-    if (newSpecialization.trim()) {
+  const addSkill = () => {
+    if (newSkill.trim()) {
       setFormData(prev => ({
         ...prev,
-        specializations: [...(prev.specializations || []), newSpecialization.trim()]
+        skills: [...(prev.skills || []), newSkill.trim()]
       }));
-      setNewSpecialization("");
+      setNewSkill("");
     }
   };
 
-  const removeSpecialization = (index) => {
+  const removeSkill = (index) => {
     setFormData(prev => ({
       ...prev,
-      specializations: prev.specializations.filter((_, i) => i !== index)
+      skills: prev.skills.filter((_, i) => i !== index)
     }));
   };
 
@@ -112,15 +112,6 @@ export default function CaregiverForm({ caregiver, onSubmit, onCancel, isLoading
                   />
                 </div>
                 <div>
-                  <Label htmlFor="employee_id">Employee ID *</Label>
-                  <Input
-                    id="employee_id"
-                    value={formData.employee_id}
-                    onChange={(e) => handleChange('employee_id', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
                   <Label htmlFor="phone">Phone *</Label>
                   <Input
                     id="phone"
@@ -155,7 +146,7 @@ export default function CaregiverForm({ caregiver, onSubmit, onCancel, isLoading
             </div>
 
             <div>
-              <h3 className="font-semibold text-lg mb-4">Certifications & Specializations</h3>
+              <h3 className="font-semibold text-lg mb-4">Certifications & Skills</h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label>Certifications</Label>
@@ -180,23 +171,23 @@ export default function CaregiverForm({ caregiver, onSubmit, onCancel, isLoading
                   </div>
                 </div>
                 <div>
-                  <Label>Specializations</Label>
+                  <Label>Skills</Label>
                   <div className="flex gap-2 mb-2">
                     <Input
-                      placeholder="Add specialization"
-                      value={newSpecialization}
-                      onChange={(e) => setNewSpecialization(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialization())}
+                      placeholder="Add skill"
+                      value={newSkill}
+                      onChange={(e) => setNewSkill(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
                     />
-                    <Button type="button" onClick={addSpecialization} size="icon">
+                    <Button type="button" onClick={addSkill} size="icon">
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {formData.specializations?.map((spec, idx) => (
+                    {formData.skills?.map((skill, idx) => (
                       <Badge key={idx} variant="secondary" className="gap-1">
-                        {spec}
-                        <X className="w-3 h-3 cursor-pointer" onClick={() => removeSpecialization(idx)} />
+                        {skill}
+                        <X className="w-3 h-3 cursor-pointer" onClick={() => removeSkill(idx)} />
                       </Badge>
                     ))}
                   </div>

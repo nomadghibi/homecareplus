@@ -35,13 +35,16 @@ import {
   AlertTriangle,
   BarChart3,
   User,
-  ChevronDown
+  ChevronDown,
+  TrendingUp
 } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
   // No layout for public pages - check this BEFORE calling any hooks
-  const publicPages = ["Landing", "AgencyLogin", "FamilyLogin", "Onboarding", "Home"];
+  const publicPages = ["Landing", "Pricing", "SignUp", "AgencyLogin", "FamilyLogin", "CaregiverLogin", "CaregiverSetup", "Onboarding", "Home"];
+  const caregiverPages = ["CaregiverDashboard", "CaregiverLogin", "CaregiverSetup"];
   const isPublicPage = publicPages.includes(currentPageName);
+  const isCaregiverPage = caregiverPages.includes(currentPageName);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -53,10 +56,30 @@ export default function Layout({ children, currentPageName }) {
 
     const fetchUser = async () => {
       try {
+        // First check localStorage for newly created user
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          setCurrentUser({
+            email: userData.email,
+            name: `${userData.firstName} ${userData.lastName}`,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            organization: userData.organizationName
+          });
+          return;
+        }
+
+        // Fallback to base44 auth
         const user = await base44.auth.getCurrentUser();
         setCurrentUser(user);
       } catch (error) {
         console.error("Failed to fetch current user:", error);
+        // Set a default user if all else fails
+        setCurrentUser({
+          email: 'demo@careconnect.com',
+          name: 'Demo User'
+        });
       }
     };
     fetchUser();
@@ -67,9 +90,54 @@ export default function Layout({ children, currentPageName }) {
     return <>{children}</>;
   }
 
+  // Early return for caregiver pages (they have their own layout)
+  if (isCaregiverPage) {
+    return <>{children}</>;
+  }
+
   const handleLogout = async () => {
-    await base44.auth.logout();
-    navigate(createPageUrl("Landing"), { replace: true });
+    try {
+      // Preserve registered users before clearing session data
+      const registeredUsers = localStorage.getItem('registeredUsers');
+
+      // Clear session data only (NOT registered users)
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('agency_info');
+      localStorage.removeItem('onboarding_completed');
+      localStorage.removeItem('rememberMe');
+      localStorage.removeItem('userEmail');
+
+      // Restore registered users
+      if (registeredUsers) {
+        localStorage.setItem('registeredUsers', registeredUsers);
+      }
+
+      // Try base44 logout (will fail gracefully if not available)
+      try {
+        await base44.auth.logout();
+      } catch (error) {
+        console.log('Base44 logout not available, continuing with localStorage cleanup');
+      }
+
+      // Clear user state
+      setCurrentUser(null);
+
+      // Navigate to landing page
+      navigate(createPageUrl("Landing"), { replace: true });
+
+      // Force page reload to ensure clean state
+      window.location.href = createPageUrl("Landing");
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if there's an error, preserve users and redirect
+      const registeredUsers = localStorage.getItem('registeredUsers');
+      localStorage.clear();
+      if (registeredUsers) {
+        localStorage.setItem('registeredUsers', registeredUsers);
+      }
+      window.location.href = createPageUrl("Landing");
+    }
   };
 
   const navItems = [
@@ -80,6 +148,7 @@ export default function Layout({ children, currentPageName }) {
     { name: "EVV", icon: MapPin, path: "EVV" },
     { name: "Visit Notes", icon: FileText, path: "Documentation" },
     { name: "Billing", icon: DollarSign, path: "Billing" },
+    { name: "Pricing", icon: TrendingUp, path: "PricingStrategies" },
     { name: "Reports", icon: BarChart3, path: "Reports" },
     { name: "File Storage", icon: FileCheck, path: "Documents" },
     { name: "Messages", icon: MessageSquare, path: "Messages" },

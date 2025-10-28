@@ -14,9 +14,15 @@ import Documentation from "./Documentation";
 
 import Billing from "./Billing";
 
+import PricingStrategies from "./PricingStrategies";
+
 import AuditLogs from "./AuditLogs";
 
 import Landing from "./Landing";
+
+import Pricing from "./Pricing";
+
+import SignUp from "./SignUp";
 
 import Home from "./Home";
 
@@ -46,6 +52,12 @@ import AgencyLogin from "./AgencyLogin";
 
 import FamilyLogin from "./FamilyLogin";
 
+import CaregiverLogin from "./CaregiverLogin";
+
+import CaregiverSetup from "./CaregiverSetup";
+
+import CaregiverDashboard from "./CaregiverDashboard";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -63,11 +75,17 @@ const PAGES = {
     Documentation: Documentation,
     
     Billing: Billing,
-    
+
+    PricingStrategies: PricingStrategies,
+
     AuditLogs: AuditLogs,
     
     Landing: Landing,
-    
+
+    Pricing: Pricing,
+
+    SignUp: SignUp,
+
     Home: Home,
     
     Reports: Reports,
@@ -93,9 +111,15 @@ const PAGES = {
     Onboarding: Onboarding,
     
     AgencyLogin: AgencyLogin,
-    
+
     FamilyLogin: FamilyLogin,
-    
+
+    CaregiverLogin: CaregiverLogin,
+
+    CaregiverSetup: CaregiverSetup,
+
+    CaregiverDashboard: CaregiverDashboard,
+
 }
 
 function _getCurrentPage(url) {
@@ -136,11 +160,17 @@ function PagesContent() {
                 <Route path="/Documentation" element={<Documentation />} />
                 
                 <Route path="/Billing" element={<Billing />} />
-                
+
+                <Route path="/PricingStrategies" element={<PricingStrategies />} />
+
                 <Route path="/AuditLogs" element={<AuditLogs />} />
                 
                 <Route path="/Landing" element={<Landing />} />
-                
+
+                <Route path="/Pricing" element={<Pricing />} />
+
+                <Route path="/SignUp" element={<SignUp />} />
+
                 <Route path="/Home" element={<Home />} />
                 
                 <Route path="/Reports" element={<Reports />} />
@@ -166,9 +196,15 @@ function PagesContent() {
                 <Route path="/Onboarding" element={<Onboarding />} />
                 
                 <Route path="/AgencyLogin" element={<AgencyLogin />} />
-                
+
                 <Route path="/FamilyLogin" element={<FamilyLogin />} />
-                
+
+                <Route path="/CaregiverLogin" element={<CaregiverLogin />} />
+
+                <Route path="/CaregiverSetup" element={<CaregiverSetup />} />
+
+                <Route path="/CaregiverDashboard" element={<CaregiverDashboard />} />
+
             </Routes>
         </Layout>
     );
