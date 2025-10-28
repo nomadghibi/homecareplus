@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(dir \"C:\\Users\\fredd\\Downloads\\care-connect-pro-3454f6a2\\src\\pages\" /B)",
+      "Bash(findstr:*)",
+      "Bash(test:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
