@@ -60,6 +60,8 @@ import CaregiverDashboard from "./CaregiverDashboard";
 
 import Checkout from "./Checkout";
 
+import ResetPassword from "./ResetPassword";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -123,6 +125,8 @@ const PAGES = {
     CaregiverDashboard: CaregiverDashboard,
 
     Checkout: Checkout,
+
+    ResetPassword: ResetPassword,
 
 }
 
@@ -210,6 +214,8 @@ function PagesContent() {
                 <Route path="/CaregiverDashboard" element={<CaregiverDashboard />} />
 
                 <Route path="/Checkout" element={<Checkout />} />
+
+                <Route path="/reset-password" element={<ResetPassword />} />
 
             </Routes>
         </Layout>

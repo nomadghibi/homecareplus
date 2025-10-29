@@ -32,6 +32,9 @@ export default function AgencyLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
 
   // Form fields
   const [email, setEmail] = useState("");
@@ -243,19 +246,50 @@ export default function AgencyLogin() {
 
   // Handle Forgot Password
   const handleForgotPassword = async () => {
-    if (!email) {
-      toast.error("Please enter your email address first");
+    setShowResetPassword(true);
+    setResetEmail(email); // Pre-fill with login email if available
+  };
+
+  // Handle Password Reset
+  const handleSendResetEmail = async (e) => {
+    e.preventDefault();
+
+    if (!resetEmail || !/\S+@\S+\.\S+/.test(resetEmail)) {
+      toast.error("Please enter a valid email address");
       return;
     }
 
+    setLoading(true);
+
     try {
-      toast.info("Password reset functionality coming soon!");
-      // TODO: Implement password reset with Supabase
-      // await base44.auth.resetPassword({ email });
+      // Import supabase client
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY
+      );
+
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setResetSent(true);
+      toast.success("Password reset email sent! Check your inbox.");
     } catch (error) {
       console.error("Reset password error:", error);
-      toast.error("Failed to send reset email");
+      toast.error(error.message || "Failed to send reset email. Please try again.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleCloseReset = () => {
+    setShowResetPassword(false);
+    setResetSent(false);
+    setResetEmail("");
+    setLoading(false);
   };
 
   // Load remembered email
@@ -691,6 +725,116 @@ export default function AgencyLogin() {
             support@careconnect.com
           </a>
         </p>
+
+        {/* Password Reset Modal */}
+        {showResetPassword && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <Card className="w-full max-w-md border-none shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-2xl">Reset Password</CardTitle>
+                <CardDescription>
+                  {resetSent
+                    ? "Check your email for reset instructions"
+                    : "Enter your email to receive a password reset link"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!resetSent ? (
+                  <form onSubmit={handleSendResetEmail} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-email">Email Address</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                        <Input
+                          id="reset-email"
+                          type="email"
+                          placeholder="your.email@example.com"
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                          className="pl-10 h-12"
+                          disabled={loading}
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        We'll send you an email with instructions to reset your password.
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCloseReset}
+                        disabled={loading}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={loading}
+                        className="flex-1 bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700"
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          "Send Reset Link"
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-6 bg-green-50 border border-green-200 rounded-lg text-center">
+                      <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-3" />
+                      <p className="text-green-900 font-medium mb-2">Email Sent!</p>
+                      <p className="text-sm text-green-700">
+                        We've sent a password reset link to:
+                      </p>
+                      <p className="text-sm font-medium text-green-900 mt-1">{resetEmail}</p>
+                    </div>
+
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800 mb-2">
+                        <strong>Next steps:</strong>
+                      </p>
+                      <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                        <li>Check your email inbox</li>
+                        <li>Click the reset link in the email</li>
+                        <li>Create your new password</li>
+                        <li>Sign in with your new credentials</li>
+                      </ol>
+                    </div>
+
+                    <div className="text-center text-sm text-slate-600">
+                      Didn't receive the email?{" "}
+                      <button
+                        onClick={() => setResetSent(false)}
+                        className="text-teal-600 hover:text-teal-700 font-medium"
+                      >
+                        Try again
+                      </button>
+                    </div>
+
+                    <Button
+                      onClick={handleCloseReset}
+                      className="w-full bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700"
+                    >
+                      Back to Login
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
       <style jsx>{`
