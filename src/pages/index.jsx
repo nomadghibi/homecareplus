@@ -58,6 +58,8 @@ import CaregiverSetup from "./CaregiverSetup";
 
 import CaregiverDashboard from "./CaregiverDashboard";
 
+import Checkout from "./Checkout";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -119,6 +121,8 @@ const PAGES = {
     CaregiverSetup: CaregiverSetup,
 
     CaregiverDashboard: CaregiverDashboard,
+
+    Checkout: Checkout,
 
 }
 
@@ -204,6 +208,8 @@ function PagesContent() {
                 <Route path="/CaregiverSetup" element={<CaregiverSetup />} />
 
                 <Route path="/CaregiverDashboard" element={<CaregiverDashboard />} />
+
+                <Route path="/Checkout" element={<Checkout />} />
 
             </Routes>
         </Layout>

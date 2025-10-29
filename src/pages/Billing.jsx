@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
-  DollarSign, 
+import {
+  DollarSign,
   Search,
   TrendingUp,
   Clock,
@@ -14,14 +14,18 @@ import {
   XCircle,
   AlertCircle,
   Plus,
-  Filter
+  Filter,
+  CreditCard,
+  FileText
 } from "lucide-react";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ClaimForm from "../components/billing/ClaimForm";
 import ClaimDetails from "../components/billing/ClaimDetails";
+import SubscriptionManager from "../components/billing/SubscriptionManager";
 
 export default function Billing() {
+  const [activeTab, setActiveTab] = useState("subscription"); // 'subscription' or 'claims'
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
@@ -114,8 +118,46 @@ export default function Billing() {
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid md:grid-cols-4 gap-6">
+      {/* Tab Selector */}
+      <div className="flex gap-2 border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab("subscription")}
+          className={`px-6 py-3 font-medium text-sm transition-colors relative ${
+            activeTab === "subscription"
+              ? "text-purple-600 border-b-2 border-purple-600"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4" />
+            Subscription & Billing
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveTab("claims")}
+          className={`px-6 py-3 font-medium text-sm transition-colors relative ${
+            activeTab === "claims"
+              ? "text-green-600 border-b-2 border-green-600"
+              : "text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Claims Management
+          </div>
+        </button>
+      </div>
+
+      {/* Subscription Tab Content */}
+      {activeTab === "subscription" && (
+        <SubscriptionManager />
+      )}
+
+      {/* Claims Tab Content */}
+      {activeTab === "claims" && (
+        <>
+          {/* Stats */}
+          <div className="grid md:grid-cols-4 gap-6">
         <Card className="border-none shadow-md">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -290,6 +332,10 @@ export default function Billing() {
       </Card>
 
       {/* Claim Form */}
+        </>
+      )}
+
+      {/* Claim Form (for both tabs if needed) */}
       {showForm && (
         <ClaimForm
           clients={clients}
@@ -300,7 +346,7 @@ export default function Billing() {
         />
       )}
 
-      {/* Claim Details */}
+      {/* Claim Details (for claims tab) */}
       {selectedClaim && (
         <ClaimDetails
           claim={selectedClaim}

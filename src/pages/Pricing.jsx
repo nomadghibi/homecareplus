@@ -15,7 +15,10 @@ import {
   Shield,
   Zap,
   Crown,
-  ArrowRight
+  ArrowRight,
+  HelpCircle,
+  TrendingUp as TrendingUpIcon,
+  Sparkles
 } from "lucide-react";
 
 export default function Pricing() {
@@ -132,6 +135,8 @@ export default function Pricing() {
   ];
 
   const [billingCycle, setBillingCycle] = React.useState("monthly");
+  const [showComparison, setShowComparison] = React.useState(false);
+  const [showFAQ, setShowFAQ] = React.useState(false);
 
   const getPrice = (plan) => {
     if (plan.price === 0) return "Free";
@@ -216,7 +221,7 @@ export default function Pricing() {
       </div>
 
       {/* Pricing Cards */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {plans.map((plan) => {
             const PlanIcon = plan.icon;
@@ -227,20 +232,28 @@ export default function Pricing() {
                 key={plan.id}
                 className={`relative ${
                   plan.popular
-                    ? "border-2 border-purple-500 shadow-2xl shadow-purple-500/20 scale-105"
+                    ? "border-2 border-purple-500 shadow-2xl shadow-purple-500/20 scale-105 ring-4 ring-purple-100"
                     : "border border-gray-200"
                 } hover:shadow-xl transition-all duration-300`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-1">
-                      Most Popular
-                    </Badge>
-                  </div>
+                  <>
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                      <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-1 shadow-lg">
+                        <Sparkles className="w-3 h-3 mr-1 inline" />
+                        Most Popular
+                      </Badge>
+                    </div>
+                    <div className="absolute -top-2 -right-2 w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                      <span className="text-white text-xs font-bold">Best<br/>Value</span>
+                    </div>
+                  </>
                 )}
 
                 <CardHeader className="text-center pb-6">
-                  <div className="mx-auto mb-4 w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-50 to-blue-50 flex items-center justify-center">
+                  <div className={`mx-auto mb-4 w-16 h-16 rounded-2xl bg-gradient-to-br ${
+                    plan.popular ? 'from-purple-100 to-blue-100' : 'from-teal-50 to-blue-50'
+                  } flex items-center justify-center`}>
                     <PlanIcon className={`w-8 h-8 ${plan.iconColor}`} />
                   </div>
                   <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
@@ -254,9 +267,12 @@ export default function Pricing() {
                       )}
                     </div>
                     {billingCycle === "annual" && savings && (
-                      <p className="text-sm text-green-600 font-medium mt-2">
-                        Save ${savings.amount}/year ({savings.percent}% off)
-                      </p>
+                      <div className="mt-2 inline-flex items-center gap-1 bg-green-50 text-green-700 px-3 py-1 rounded-full">
+                        <TrendingUpIcon className="w-3 h-3" />
+                        <p className="text-sm font-semibold">
+                          Save ${savings.amount}/year ({savings.percent}% off)
+                        </p>
+                      </div>
                     )}
                     <p className="text-sm text-gray-500 mt-1">{plan.period}</p>
                   </div>
@@ -284,7 +300,7 @@ export default function Pricing() {
                     <Button
                       className={`w-full ${
                         plan.popular
-                          ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                          ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg"
                           : ""
                       }`}
                       variant={plan.popular ? "default" : "outline"}
@@ -299,7 +315,158 @@ export default function Pricing() {
             );
           })}
         </div>
+
+        {/* Compare Plans Button */}
+        <div className="text-center mt-12">
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => setShowComparison(!showComparison)}
+            className="border-2 border-teal-500 text-teal-700 hover:bg-teal-50"
+          >
+            {showComparison ? 'Hide' : 'Show'} Detailed Comparison
+            <TrendingUp className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
       </div>
+
+      {/* Feature Comparison Table */}
+      {showComparison && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-teal-50 to-blue-50">
+              <CardTitle className="text-2xl text-center">Complete Feature Comparison</CardTitle>
+              <CardDescription className="text-center">Compare all features across plans</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b-2 border-gray-200">
+                    <tr>
+                      <th className="text-left p-4 font-semibold text-gray-900">Feature</th>
+                      {plans.map((plan) => (
+                        <th key={plan.id} className={`text-center p-4 font-semibold ${plan.popular ? 'bg-purple-50' : ''}`}>
+                          <div className="flex flex-col items-center gap-1">
+                            <span>{plan.name}</span>
+                            {plan.popular && (
+                              <Badge className="bg-purple-600 text-white text-xs">Popular</Badge>
+                            )}
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {/* Capacity Limits */}
+                    <tr className="bg-gray-50">
+                      <td colSpan={5} className="p-3 font-semibold text-sm text-gray-700">Capacity Limits</td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 text-sm">Clients</td>
+                      <td className="p-4 text-center text-sm">10</td>
+                      <td className="p-4 text-center text-sm">50</td>
+                      <td className={`p-4 text-center text-sm ${plans[2].popular ? 'bg-purple-50/30' : ''}`}>200</td>
+                      <td className="p-4 text-center text-sm font-semibold text-green-600">Unlimited</td>
+                    </tr>
+                    <tr className="bg-gray-50/50">
+                      <td className="p-4 text-sm">Caregivers</td>
+                      <td className="p-4 text-center text-sm">5</td>
+                      <td className="p-4 text-center text-sm">15</td>
+                      <td className={`p-4 text-center text-sm ${plans[2].popular ? 'bg-purple-50/30' : ''}`}>50</td>
+                      <td className="p-4 text-center text-sm font-semibold text-green-600">Unlimited</td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 text-sm">Visits/month</td>
+                      <td className="p-4 text-center text-sm">50</td>
+                      <td className="p-4 text-center text-sm">500</td>
+                      <td className={`p-4 text-center text-sm ${plans[2].popular ? 'bg-purple-50/30' : ''}`}>2,000</td>
+                      <td className="p-4 text-center text-sm font-semibold text-green-600">Unlimited</td>
+                    </tr>
+                    <tr className="bg-gray-50/50">
+                      <td className="p-4 text-sm">User accounts</td>
+                      <td className="p-4 text-center text-sm">2</td>
+                      <td className="p-4 text-center text-sm">5</td>
+                      <td className={`p-4 text-center text-sm ${plans[2].popular ? 'bg-purple-50/30' : ''}`}>15</td>
+                      <td className="p-4 text-center text-sm font-semibold text-green-600">Unlimited</td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 text-sm">Storage</td>
+                      <td className="p-4 text-center text-sm">1 GB</td>
+                      <td className="p-4 text-center text-sm">10 GB</td>
+                      <td className={`p-4 text-center text-sm ${plans[2].popular ? 'bg-purple-50/30' : ''}`}>50 GB</td>
+                      <td className="p-4 text-center text-sm font-semibold text-green-600">Unlimited</td>
+                    </tr>
+
+                    {/* Core Features */}
+                    <tr className="bg-gray-50">
+                      <td colSpan={5} className="p-3 font-semibold text-sm text-gray-700">Core Features</td>
+                    </tr>
+                    <tr className="bg-gray-50/50">
+                      <td className="p-4 text-sm">EVV Tracking</td>
+                      <td className="p-4 text-center"><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
+                      <td className="p-4 text-center"><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                      <td className={`p-4 text-center ${plans[2].popular ? 'bg-purple-50/30' : ''}`}><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                      <td className="p-4 text-center"><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 text-sm">Mobile App</td>
+                      <td className="p-4 text-center"><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
+                      <td className="p-4 text-center"><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                      <td className={`p-4 text-center ${plans[2].popular ? 'bg-purple-50/30' : ''}`}><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                      <td className="p-4 text-center"><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="bg-gray-50/50">
+                      <td className="p-4 text-sm">Family Portal</td>
+                      <td className="p-4 text-center"><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                      <td className="p-4 text-center"><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                      <td className={`p-4 text-center ${plans[2].popular ? 'bg-purple-50/30' : ''}`}><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                      <td className="p-4 text-center"><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                    </tr>
+
+                    {/* Advanced Features */}
+                    <tr className="bg-gray-50">
+                      <td colSpan={5} className="p-3 font-semibold text-sm text-gray-700">Advanced Features</td>
+                    </tr>
+                    <tr className="bg-gray-50/50">
+                      <td className="p-4 text-sm">Advanced Reporting</td>
+                      <td className="p-4 text-center"><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
+                      <td className="p-4 text-center"><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
+                      <td className={`p-4 text-center ${plans[2].popular ? 'bg-purple-50/30' : ''}`}><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                      <td className="p-4 text-center"><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                    </tr>
+                    <tr>
+                      <td className="p-4 text-sm">API Access</td>
+                      <td className="p-4 text-center"><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
+                      <td className="p-4 text-center"><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
+                      <td className={`p-4 text-center ${plans[2].popular ? 'bg-purple-50/30' : ''}`}><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                      <td className="p-4 text-center"><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                    </tr>
+                    <tr className="bg-gray-50/50">
+                      <td className="p-4 text-sm">White-label Branding</td>
+                      <td className="p-4 text-center"><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
+                      <td className="p-4 text-center"><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
+                      <td className={`p-4 text-center ${plans[2].popular ? 'bg-purple-50/30' : ''}`}><X className="w-5 h-5 text-gray-300 mx-auto" /></td>
+                      <td className="p-4 text-center"><Check className="w-5 h-5 text-green-500 mx-auto" /></td>
+                    </tr>
+
+                    {/* Support */}
+                    <tr className="bg-gray-50">
+                      <td colSpan={5} className="p-3 font-semibold text-sm text-gray-700">Support</td>
+                    </tr>
+                    <tr className="bg-gray-50/50">
+                      <td className="p-4 text-sm">Support Type</td>
+                      <td className="p-4 text-center text-sm">Email</td>
+                      <td className="p-4 text-center text-sm">Email</td>
+                      <td className={`p-4 text-center text-sm font-medium ${plans[2].popular ? 'bg-purple-50/30' : ''}`}>Priority</td>
+                      <td className="p-4 text-center text-sm font-medium text-green-600">24/7 Phone</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Add-ons Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
@@ -407,6 +574,117 @@ export default function Pricing() {
           <p className="text-gray-400">© 2025 Care Connect Pro. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Sticky CTA Button */}
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 hidden md:block">
+        <Link to={createPageUrl("SignUp") + "?plan=professional"}>
+          <Button
+            size="lg"
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-2xl text-white px-8 py-6 text-lg font-semibold animate-bounce"
+          >
+            <Sparkles className="w-5 h-5 mr-2" />
+            Start Free Trial Now
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
+        </Link>
+      </div>
+
+      {/* Floating FAQ Button */}
+      <button
+        onClick={() => setShowFAQ(!showFAQ)}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-teal-600 hover:bg-teal-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110"
+        aria-label="Toggle FAQ"
+      >
+        <HelpCircle className="w-6 h-6" />
+      </button>
+
+      {/* FAQ Modal/Popup */}
+      {showFAQ && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4"
+          onClick={() => setShowFAQ(false)}
+        >
+          <Card
+            className="max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardHeader className="bg-gradient-to-r from-teal-50 to-blue-50">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-2xl">Quick Help</CardTitle>
+                <button
+                  onClick={() => setShowFAQ(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <CardDescription>Common questions about our pricing</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-teal-600" />
+                  Which plan is right for me?
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Start with our <strong>Free Trial</strong> to test features. Small agencies (1-50 clients) typically choose <strong>Starter</strong>.
+                  Growing agencies (50-200 clients) prefer <strong>Professional</strong> for advanced reporting and API access.
+                  Large organizations need <strong>Enterprise</strong> for unlimited capacity and dedicated support.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-teal-600" />
+                  Can I change plans later?
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Yes! Upgrade or downgrade anytime. Changes take effect immediately, and we prorate the difference.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-teal-600" />
+                  How much do I save with annual billing?
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Annual billing saves you up to 17% compared to monthly. For example, Professional plan saves you $598/year.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-teal-600" />
+                  What payment methods do you accept?
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  We accept all major credit cards (Visa, Mastercard, American Express) and ACH bank transfers for annual plans.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-teal-600" />
+                  What if I exceed my plan limits?
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  We'll notify you when approaching limits. You can upgrade your plan or purchase add-ons for additional capacity.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t">
+                <p className="text-sm text-gray-500 text-center">
+                  Still have questions?
+                  <Link to={createPageUrl("SignUp")} className="text-teal-600 hover:underline ml-1">
+                    Contact our sales team
+                  </Link>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

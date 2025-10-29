@@ -18,7 +18,11 @@ import {
   Check,
   Loader2,
   ArrowRight,
-  Shield
+  Shield,
+  Clock,
+  Info,
+  CheckCircle2,
+  AlertCircle
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -31,6 +35,8 @@ export default function SignUp() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [showPasswordHelper, setShowPasswordHelper] = useState(false);
 
   const [formData, setFormData] = useState({
     // Step 1: Organization Info
@@ -64,6 +70,27 @@ export default function SignUp() {
 
   const plan = plans[selectedPlan] || plans.starter;
 
+  // Calculate password strength (0-4)
+  const calculatePasswordStrength = (password) => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+    return Math.min(strength, 4);
+  };
+
+  const getPasswordStrengthLabel = (strength) => {
+    const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+    return labels[strength];
+  };
+
+  const getPasswordStrengthColor = (strength) => {
+    const colors = ['bg-gray-200', 'bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+    return colors[strength];
+  };
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error for this field
@@ -77,6 +104,11 @@ export default function SignUp() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '');
       setFormData(prev => ({ ...prev, slug }));
+    }
+
+    // Calculate password strength
+    if (field === 'password') {
+      setPasswordStrength(calculatePasswordStrength(value));
     }
   };
 
@@ -176,37 +208,49 @@ export default function SignUp() {
     navigate(createPageUrl('Onboarding') + `?new=true&plan=${selectedPlan}`);
   };
 
-  const renderStepIndicator = () => (
-    <div className="flex items-center justify-center mb-8">
-      {[1, 2, 3].map((step) => (
-        <React.Fragment key={step}>
-          <div className="flex flex-col items-center">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                currentStep >= step
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-gray-200 text-gray-500'
-              }`}
-            >
-              {currentStep > step ? <Check className="w-5 h-5" /> : step}
-            </div>
-            <span className="text-xs mt-2 text-gray-600">
-              {step === 1 && 'Organization'}
-              {step === 2 && 'Account'}
-              {step === 3 && 'Details'}
-            </span>
-          </div>
-          {step < 3 && (
-            <div
-              className={`w-16 h-1 mx-2 mb-6 ${
-                currentStep > step ? 'bg-teal-600' : 'bg-gray-200'
-              }`}
-            />
-          )}
-        </React.Fragment>
-      ))}
-    </div>
-  );
+  const renderStepIndicator = () => {
+    const progress = Math.round((currentStep / 3) * 100);
+
+    return (
+      <div className="mb-8">
+        {/* Progress percentage */}
+        <div className="text-center mb-2">
+          <span className="text-sm font-medium text-teal-600">{progress}% Complete</span>
+        </div>
+
+        {/* Step indicators */}
+        <div className="flex items-center justify-center">
+          {[1, 2, 3].map((step) => (
+            <React.Fragment key={step}>
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                    currentStep >= step
+                      ? 'bg-teal-600 text-white scale-110'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  {currentStep > step ? <Check className="w-5 h-5" /> : step}
+                </div>
+                <span className={`text-xs mt-2 ${currentStep >= step ? 'text-teal-600 font-medium' : 'text-gray-500'}`}>
+                  {step === 1 && 'Organization'}
+                  {step === 2 && 'Account'}
+                  {step === 3 && 'Details'}
+                </span>
+              </div>
+              {step < 3 && (
+                <div
+                  className={`w-16 h-1 mx-2 mb-6 transition-all ${
+                    currentStep > step ? 'bg-teal-600' : 'bg-gray-200'
+                  }`}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 py-12">
@@ -245,6 +289,10 @@ export default function SignUp() {
         <Card className="shadow-xl">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl">Create Your Account</CardTitle>
+            <CardDescription className="flex items-center justify-center gap-2 mt-2">
+              <Clock className="w-4 h-4" />
+              <span>Takes about 2 minutes</span>
+            </CardDescription>
             <CardDescription>
               {selectedPlan === 'free' ? 'Start your 14-day free trial' : 'Get started with Care Connect Pro'}
             </CardDescription>
@@ -277,9 +325,17 @@ export default function SignUp() {
                   </div>
 
                   <div>
-                    <Label htmlFor="slug">
-                      Your URL <span className="text-red-500">*</span>
-                    </Label>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Label htmlFor="slug">
+                        Your URL <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="group relative inline-block">
+                        <Info className="w-4 h-4 text-gray-400 cursor-help" />
+                        <div className="hidden group-hover:block absolute z-10 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg -top-2 left-6">
+                          This creates your unique portal URL where you, your staff, and families can access Care Connect Pro
+                        </div>
+                      </div>
+                    </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-500">careconnectpro.com/</span>
                       <Input
@@ -373,10 +429,60 @@ export default function SignUp() {
                         className="pl-10"
                         value={formData.password}
                         onChange={(e) => handleChange('password', e.target.value)}
+                        onFocus={() => setShowPasswordHelper(true)}
                       />
                     </div>
                     {errors.password && (
                       <p className="text-sm text-red-500 mt-1">{errors.password}</p>
+                    )}
+
+                    {/* Password Strength Meter */}
+                    {formData.password && (
+                      <div className="mt-2 space-y-2">
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4].map((level) => (
+                            <div
+                              key={level}
+                              className={`h-1 flex-1 rounded-full transition-all ${
+                                level <= passwordStrength
+                                  ? getPasswordStrengthColor(passwordStrength)
+                                  : 'bg-gray-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className={`text-xs font-medium ${
+                          passwordStrength === 4 ? 'text-green-600' :
+                          passwordStrength === 3 ? 'text-yellow-600' :
+                          passwordStrength === 2 ? 'text-orange-600' :
+                          'text-red-600'
+                        }`}>
+                          Password Strength: {getPasswordStrengthLabel(passwordStrength)}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Password Requirements Helper */}
+                    {showPasswordHelper && (
+                      <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs space-y-1">
+                        <p className="font-medium text-blue-900 mb-1">Password must contain:</p>
+                        <div className={`flex items-center gap-1 ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-600'}`}>
+                          {formData.password.length >= 8 ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                          <span>At least 8 characters</span>
+                        </div>
+                        <div className={`flex items-center gap-1 ${/[A-Z]/.test(formData.password) && /[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-600'}`}>
+                          {/[A-Z]/.test(formData.password) && /[a-z]/.test(formData.password) ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                          <span>Mix of uppercase & lowercase</span>
+                        </div>
+                        <div className={`flex items-center gap-1 ${/\d/.test(formData.password) ? 'text-green-600' : 'text-gray-600'}`}>
+                          {/\d/.test(formData.password) ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                          <span>At least one number</span>
+                        </div>
+                        <div className={`flex items-center gap-1 ${/[^a-zA-Z0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-600'}`}>
+                          {/[^a-zA-Z0-9]/.test(formData.password) ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                          <span>Special character (recommended)</span>
+                        </div>
+                      </div>
                     )}
                   </div>
 
