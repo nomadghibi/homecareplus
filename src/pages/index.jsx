@@ -62,6 +62,8 @@ import Checkout from "./Checkout";
 
 import ResetPassword from "./ResetPassword";
 
+import EmailTest from "./EmailTest";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -127,6 +129,8 @@ const PAGES = {
     Checkout: Checkout,
 
     ResetPassword: ResetPassword,
+
+    EmailTest: EmailTest,
 
 }
 
@@ -216,6 +220,8 @@ function PagesContent() {
                 <Route path="/Checkout" element={<Checkout />} />
 
                 <Route path="/reset-password" element={<ResetPassword />} />
+
+                <Route path="/EmailTest" element={<EmailTest />} />
 
             </Routes>
         </Layout>

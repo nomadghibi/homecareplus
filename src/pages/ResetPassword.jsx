@@ -25,7 +25,39 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [tokenError, setTokenError] = useState(false);
+  const [supabase, setSupabase] = useState(null);
   const navigate = useNavigate();
+
+  // Initialize Supabase and verify token on mount
+  useEffect(() => {
+    const initSupabase = async () => {
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const client = createClient(
+          import.meta.env.VITE_SUPABASE_URL,
+          import.meta.env.VITE_SUPABASE_ANON_KEY
+        );
+
+        setSupabase(client);
+
+        // Check if we have a valid session from the URL
+        const { data: { session }, error } = await client.auth.getSession();
+
+        if (error || !session) {
+          console.error("No valid session found:", error);
+          setTokenError(true);
+          toast.error("Invalid or expired reset link. Please request a new one.");
+        }
+      } catch (err) {
+        console.error("Failed to initialize Supabase:", err);
+        setTokenError(true);
+        toast.error("Failed to initialize password reset.");
+      }
+    };
+
+    initSupabase();
+  }, []);
 
   // Password strength checker
   const getPasswordStrength = (pass) => {
@@ -54,6 +86,13 @@ export default function ResetPassword() {
   const handleResetPassword = async (e) => {
     e.preventDefault();
 
+    // Check if supabase is initialized
+    if (!supabase) {
+      setError("System not ready. Please refresh the page.");
+      toast.error("System not ready. Please refresh the page.");
+      return;
+    }
+
     // Validation
     if (!password || password.length < 8) {
       setError("Password must be at least 8 characters");
@@ -71,13 +110,6 @@ export default function ResetPassword() {
     setError("");
 
     try {
-      // Import supabase client
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_ANON_KEY
-      );
-
       const { error } = await supabase.auth.updateUser({
         password: password
       });
@@ -86,6 +118,9 @@ export default function ResetPassword() {
 
       setSuccess(true);
       toast.success("Password reset successfully!");
+
+      // Sign out to clear the recovery session
+      await supabase.auth.signOut();
 
       // Redirect to login after 2 seconds
       setTimeout(() => {
