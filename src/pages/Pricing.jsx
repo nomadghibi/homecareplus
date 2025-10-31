@@ -53,8 +53,8 @@ export default function Pricing() {
       name: "Starter",
       icon: TrendingUp,
       iconColor: "text-blue-600",
-      price: 99,
-      annualPrice: 990,
+      price: 199,
+      annualPrice: 1990,
       period: "per month",
       description: "For small home care agencies getting started",
       features: [
@@ -81,8 +81,8 @@ export default function Pricing() {
       name: "Professional",
       icon: Star,
       iconColor: "text-purple-600",
-      price: 299,
-      annualPrice: 2990,
+      price: 399,
+      annualPrice: 3990,
       period: "per month",
       description: "For growing agencies with advanced needs",
       features: [
@@ -109,8 +109,8 @@ export default function Pricing() {
       name: "Enterprise",
       icon: Crown,
       iconColor: "text-amber-600",
-      price: 599,
-      annualPrice: 5990,
+      price: 659,
+      annualPrice: 6590,
       period: "per month",
       description: "For large organizations with custom requirements",
       features: [
