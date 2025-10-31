@@ -64,7 +64,7 @@ import ResetPassword from "./ResetPassword";
 
 import EmailTest from "./EmailTest";
 
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 
 const PAGES = {
     
@@ -156,8 +156,9 @@ function PagesContent() {
         <Layout currentPageName={currentPage}>
             <Routes>
 
-                    <Route path="/" element={<Landing />} />
+                    <Route path="/" element={<Navigate to="/Landing" replace />} />
 
+                    <Route path="/Landing" element={<Landing />} />
 
                 <Route path="/Dashboard" element={<Dashboard />} />
                 
