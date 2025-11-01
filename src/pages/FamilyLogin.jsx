@@ -128,13 +128,6 @@ export default function FamilyLogin() {
                       </>
                     )}
                   </Button>
-
-                  <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                    <p className="text-xs text-slate-600">
-                      <strong>Demo Mode:</strong><br />
-                      Use any email and password to explore the family portal
-                    </p>
-                  </div>
                 </form>
               </TabsContent>
 

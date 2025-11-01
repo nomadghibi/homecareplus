@@ -167,8 +167,8 @@ export const createMockClient = () => {
         const user = {
           id: '1',
           email: credentials.email,
-          name: 'Demo User',
-          role: 'Admin'
+          name: credentials.name || credentials.email.split('@')[0],
+          role: credentials.role || 'Admin'
         };
         const token = 'mock_token_' + Date.now();
 
