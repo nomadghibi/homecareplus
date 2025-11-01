@@ -56,32 +56,77 @@ export default function Layout({ children, currentPageName }) {
 
     const fetchUser = async () => {
       try {
+        console.log('[Layout] Fetching current user...');
+
         // First check localStorage for newly created user
         const storedUser = localStorage.getItem('currentUser');
+        console.log('[Layout] Stored user in localStorage:', storedUser ? 'Found' : 'Not found');
+
         if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          setCurrentUser({
-            email: userData.email,
-            name: `${userData.firstName} ${userData.lastName}`,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            organization: userData.organizationName
-          });
-          return;
+          try {
+            const userData = JSON.parse(storedUser);
+            console.log('[Layout] Parsed user data:', userData);
+
+            // Build user object with fallbacks
+            const userObj = {
+              email: userData.email || userData.userEmail || 'user@example.com',
+              name: userData.name ||
+                    (userData.firstName && userData.lastName
+                      ? `${userData.firstName} ${userData.lastName}`
+                      : userData.organizationName || 'User'),
+              firstName: userData.firstName || '',
+              lastName: userData.lastName || '',
+              organization: userData.organizationName || userData.organization || '',
+              role: userData.role || 'Admin'
+            };
+
+            console.log('[Layout] Setting current user:', userObj);
+            setCurrentUser(userObj);
+            return;
+          } catch (parseError) {
+            console.error('[Layout] Error parsing stored user:', parseError);
+          }
+        }
+
+        // Check if user is authenticated
+        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+        console.log('[Layout] Is authenticated:', isAuthenticated);
+
+        if (isAuthenticated) {
+          // Try to get email from other storage keys
+          const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('email');
+          if (userEmail) {
+            console.log('[Layout] Found user email:', userEmail);
+            setCurrentUser({
+              email: userEmail,
+              name: userEmail.split('@')[0] || 'User',
+              role: 'Admin'
+            });
+            return;
+          }
         }
 
         // Fallback to base44 auth
+        console.log('[Layout] Trying base44 auth...');
         const user = await base44.auth.getCurrentUser();
+        console.log('[Layout] Base44 user:', user);
         setCurrentUser(user);
       } catch (error) {
-        console.error("Failed to fetch current user:", error);
-        // Set a default user if all else fails
-        setCurrentUser({
-          email: 'demo@careconnect.com',
-          name: 'Demo User'
-        });
+        console.error("[Layout] Failed to fetch current user:", error);
+
+        // Last resort: check if we're authenticated at all
+        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+        if (isAuthenticated) {
+          console.log('[Layout] Setting default authenticated user');
+          setCurrentUser({
+            email: 'user@careconnect.com',
+            name: 'Agency User',
+            role: 'Admin'
+          });
+        }
       }
     };
+
     fetchUser();
   }, [isPublicPage]);
 
@@ -165,7 +210,7 @@ export default function Layout({ children, currentPageName }) {
       <div className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <Heart className="w-6 h-6 text-teal-600" />
-          <span className="font-bold text-lg">CareConnect</span>
+          <span className="font-bold text-lg">Care Connect Pro</span>
         </div>
         <div className="flex items-center gap-2">
           {/* Notifications for Mobile */}
