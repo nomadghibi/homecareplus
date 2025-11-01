@@ -36,6 +36,7 @@ import RecentVisits from "../components/dashboard/RecentVisits";
 import UpcomingShifts from "../components/dashboard/UpcomingShifts";
 import EVVStatusChart from "../components/dashboard/EVVStatusChart";
 import BillingOverview from "../components/dashboard/BillingOverview";
+import UsageStatsCard from "../components/subscription/UsageStatsCard";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -407,6 +408,9 @@ export default function Dashboard() {
 
         {/* Right Column - 1/3 width */}
         <div className="space-y-6">
+          {/* Usage Stats & Trial Status */}
+          <UsageStatsCard />
+
           {/* Financial Summary */}
           <Card className="border-none shadow-lg bg-gradient-to-br from-slate-900 to-slate-800 text-white">
             <CardHeader>

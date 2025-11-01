@@ -5,9 +5,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Calendar as CalendarIcon, 
-  Plus, 
+import {
+  Calendar as CalendarIcon,
+  Plus,
   Clock,
   Users,
   Filter,
@@ -17,6 +17,7 @@ import {
 import { format, startOfWeek, addDays, isSameDay } from "date-fns";
 import VisitForm from "../components/schedule/VisitForm";
 import ScheduleCalendar from "../components/schedule/ScheduleCalendar";
+import { withResourceLimitCheck } from "@/utils/resourceLimits";
 
 export default function Schedule() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -41,7 +42,12 @@ export default function Schedule() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Visit.create(data),
+    mutationFn: async (data) => {
+      // Check resource limits before creating visit
+      return await withResourceLimitCheck('visits', async () => {
+        return await base44.entities.Visit.create(data);
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['visits']);
       setShowForm(false);

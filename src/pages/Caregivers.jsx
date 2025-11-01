@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
 import CaregiverForm from "../components/caregivers/CaregiverForm";
 import CaregiverDetails from "../components/caregivers/CaregiverDetails";
+import { withResourceLimitCheck } from "@/utils/resourceLimits";
 
 export default function Caregivers() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,7 +40,12 @@ export default function Caregivers() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Caregiver.create(data),
+    mutationFn: async (data) => {
+      // Check resource limits before creating caregiver
+      return await withResourceLimitCheck('caregivers', async () => {
+        return await base44.entities.Caregiver.create(data);
+      });
+    },
     onSuccess: (newCaregiver) => {
       console.log('Caregiver created successfully:', newCaregiver);
       queryClient.invalidateQueries(['caregivers']);

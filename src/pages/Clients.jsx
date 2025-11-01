@@ -5,12 +5,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, 
-  Search, 
-  Users, 
-  Phone, 
-  Mail, 
+import {
+  Plus,
+  Search,
+  Users,
+  Phone,
+  Mail,
   MapPin,
   Calendar,
   FileText,
@@ -20,6 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ClientForm from "../components/clients/ClientForm";
 import ClientDetails from "../components/clients/ClientDetails";
+import { withResourceLimitCheck } from "@/utils/resourceLimits";
 
 export default function Clients() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,7 +35,12 @@ export default function Clients() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Client.create(data),
+    mutationFn: async (data) => {
+      // Check resource limits before creating client
+      return await withResourceLimitCheck('clients', async () => {
+        return await base44.entities.Client.create(data);
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['clients']);
       setShowForm(false);
