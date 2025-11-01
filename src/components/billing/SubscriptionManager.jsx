@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,9 +16,10 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { STRIPE_PRICING, stripeAPI, getStripe } from '@/api/stripeClient';
+import { STRIPE_PRICING, stripeAPI } from '@/api/stripeClient';
 
 export default function SubscriptionManager() {
+  const navigate = useNavigate();
   const [currentPlan, setCurrentPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState('active');
@@ -36,52 +39,9 @@ export default function SubscriptionManager() {
     setSubscriptionStatus(subscription.status);
   }, []);
 
-  const handleUpgrade = async (planKey) => {
-    setLoading(true);
-
-    try {
-      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-      const plan = STRIPE_PRICING[planKey];
-
-      if (!plan.priceId) {
-        toast.error('Payment not configured', {
-          description: 'Please contact support to upgrade your plan'
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Create checkout session
-      const { sessionId, error } = await stripeAPI.createCheckoutSession(
-        plan.priceId,
-        currentUser.email,
-        {
-          userId: currentUser.id,
-          planName: plan.name
-        }
-      );
-
-      if (error) {
-        throw new Error(error);
-      }
-
-      // Redirect to Stripe Checkout
-      const stripe = await getStripe();
-      const { error: stripeError } = await stripe.redirectToCheckout({
-        sessionId
-      });
-
-      if (stripeError) {
-        throw stripeError;
-      }
-    } catch (error) {
-      console.error('Upgrade error:', error);
-      toast.error('Upgrade failed', {
-        description: error.message || 'Please try again or contact support'
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleUpgrade = (planKey) => {
+    // Navigate to checkout page with selected plan
+    navigate(createPageUrl('Checkout') + `?plan=${planKey}`);
   };
 
   const handleManageBilling = async () => {
@@ -288,15 +248,10 @@ export default function SubscriptionManager() {
                         : ''
                     }`}
                     variant={isCurrentPlan ? 'outline' : 'default'}
-                    disabled={isCurrentPlan || loading}
+                    disabled={isCurrentPlan}
                     onClick={() => isUpgrade && handleUpgrade(key)}
                   >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Processing...
-                      </>
-                    ) : isCurrentPlan ? (
+                    {isCurrentPlan ? (
                       'Current Plan'
                     ) : (
                       <>

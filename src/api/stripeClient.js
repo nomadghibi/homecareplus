@@ -22,7 +22,7 @@ export const STRIPE_PRICING = {
   starter: {
     priceId: import.meta.env.VITE_STRIPE_STARTER_PRICE_ID,
     name: 'Starter',
-    price: 99,
+    price: 199,
     billingPeriod: 'month',
     features: [
       'Up to 50 clients',
@@ -42,7 +42,7 @@ export const STRIPE_PRICING = {
   professional: {
     priceId: import.meta.env.VITE_STRIPE_PROFESSIONAL_PRICE_ID,
     name: 'Professional',
-    price: 299,
+    price: 399,
     billingPeriod: 'month',
     features: [
       'Up to 200 clients',
@@ -62,7 +62,7 @@ export const STRIPE_PRICING = {
   enterprise: {
     priceId: import.meta.env.VITE_STRIPE_ENTERPRISE_PRICE_ID,
     name: 'Enterprise',
-    price: 599,
+    price: 659,
     billingPeriod: 'month',
     features: [
       'Unlimited clients',
