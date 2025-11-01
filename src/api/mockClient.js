@@ -183,6 +183,30 @@ export const createMockClient = () => {
         };
       },
 
+      async signup(credentials) {
+        await asyncDelay();
+        console.log('Mock signup:', credentials);
+        const { email, password, name, role } = credentials;
+
+        const user = {
+          id: 'user_' + Date.now(),
+          email,
+          name: name || email.split('@')[0],
+          role: role || 'Admin'
+        };
+        const token = 'mock_token_' + Date.now();
+
+        // Store auth state in localStorage
+        localStorage.setItem('mock_auth_token', token);
+        localStorage.setItem('mock_auth_user', JSON.stringify(user));
+
+        return {
+          success: true,
+          user,
+          token
+        };
+      },
+
       async logout() {
         await asyncDelay();
         // Clear auth state
