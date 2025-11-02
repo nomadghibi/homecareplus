@@ -137,4 +137,9 @@ SELECT
 FROM information_schema.triggers
 WHERE trigger_name = 'on_auth_user_created_org_profile';
 
-RAISE NOTICE '✅ Signup trigger updated successfully';
+-- Success message
+DO $$
+BEGIN
+    RAISE NOTICE '✅ Signup trigger updated successfully';
+    RAISE NOTICE 'You can now test signup at: http://localhost:5173/signup';
+END $$;
