@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { base44 } from '@/api/base44Client';
+import { supabase } from '@/api/supabaseClient';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 
 export default function AuthCallback() {
@@ -17,13 +17,12 @@ export default function AuthCallback() {
 
         // Get the hash from URL (Supabase uses URL hash for tokens)
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
         const type = hashParams.get('type');
         const error = hashParams.get('error');
         const errorDescription = hashParams.get('error_description');
 
         console.log('[AuthCallback] Type:', type);
-        console.log('[AuthCallback] Has access token:', !!accessToken);
+        console.log('[AuthCallback] Hash params:', Object.fromEntries(hashParams.entries()));
 
         // Check for errors
         if (error) {
@@ -37,19 +36,37 @@ export default function AuthCallback() {
           return;
         }
 
+        // Wait a moment for Supabase to automatically process the token in the URL
+        // (detectSessionInUrl is enabled in supabaseClient.js)
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Get the session to verify the token was processed
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        console.log('[AuthCallback] Session after processing:', !!session);
+        console.log('[AuthCallback] Session error:', sessionError);
+
+        if (sessionError) {
+          throw sessionError;
+        }
+
         // Handle different callback types
         if (type === 'signup' || type === 'email') {
           // Email confirmation callback
-          if (accessToken) {
+          if (session) {
             setStatus('success');
             setMessage('Email confirmed successfully! Redirecting to login...');
+            console.log('[AuthCallback] Email confirmed for user:', session.user.email);
+
+            // Clear the hash from URL
+            window.history.replaceState(null, '', window.location.pathname);
 
             // Wait 2 seconds then redirect to login
             setTimeout(() => {
               navigate(createPageUrl('AgencyLogin'));
             }, 2000);
           } else {
-            throw new Error('No access token received');
+            throw new Error('No session established after token processing');
           }
         } else if (type === 'recovery') {
           // Password reset callback
@@ -61,9 +78,7 @@ export default function AuthCallback() {
           }, 1000);
         } else {
           // Generic callback - check if user is authenticated
-          const isAuthenticated = await base44.auth.isAuthenticated();
-
-          if (isAuthenticated) {
+          if (session) {
             setStatus('success');
             setMessage('Authentication successful! Redirecting to dashboard...');
 
@@ -71,7 +86,7 @@ export default function AuthCallback() {
               navigate(createPageUrl('Dashboard'));
             }, 1500);
           } else {
-            throw new Error('Authentication failed');
+            throw new Error('Authentication failed - no session');
           }
         }
 
