@@ -50,6 +50,8 @@ import Onboarding from "./Onboarding";
 
 import AgencyLogin from "./AgencyLogin";
 
+import AuthCallback from "./AuthCallback";
+
 import FamilyLogin from "./FamilyLogin";
 
 import CaregiverLogin from "./CaregiverLogin";
@@ -117,6 +119,8 @@ const PAGES = {
     Onboarding: Onboarding,
     
     AgencyLogin: AgencyLogin,
+
+    AuthCallback: AuthCallback,
 
     FamilyLogin: FamilyLogin,
 
@@ -209,6 +213,8 @@ function PagesContent() {
                 <Route path="/Onboarding" element={<Onboarding />} />
                 
                 <Route path="/AgencyLogin" element={<AgencyLogin />} />
+
+                <Route path="/auth/callback" element={<AuthCallback />} />
 
                 <Route path="/FamilyLogin" element={<FamilyLogin />} />
 
