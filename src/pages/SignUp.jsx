@@ -25,6 +25,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
 
 export default function SignUp() {
   const [searchParams] = useSearchParams();
@@ -37,6 +38,8 @@ export default function SignUp() {
   const [errors, setErrors] = useState({});
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [showPasswordHelper, setShowPasswordHelper] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
 
   const [formData, setFormData] = useState({
     // Step 1: Organization Info
@@ -170,42 +173,36 @@ export default function SignUp() {
     if (!validateStep(3)) return;
 
     setIsLoading(true);
+    setErrors({});
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Call Supabase Auth signup with organization metadata
+      const result = await base44.auth.signup({
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        organizationName: formData.organizationName,
+        organizationSlug: formData.slug,
+      });
 
-    // Create user account data (persistent)
-    const userData = {
-      id: `user-${Date.now()}`,
-      email: formData.email,
-      password: formData.password, // In production, this would be hashed
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      organizationName: formData.organizationName,
-      organizationSlug: formData.slug,
-      phone: formData.phone,
-      address: formData.address,
-      city: formData.city,
-      state: formData.state,
-      zipCode: formData.zipCode,
-      plan: selectedPlan,
-      createdAt: new Date().toISOString(),
-      onboardingCompleted: false
-    };
-
-    // Save to persistent user registry
-    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    registeredUsers.push(userData);
-    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-
-    // Also set current session
-    localStorage.setItem('currentUser', JSON.stringify(userData));
-    localStorage.setItem('isAuthenticated', 'true');
-
-    console.log('User created and registered:', userData);
-
-    // Redirect to onboarding
-    navigate(createPageUrl('Onboarding') + `?new=true&plan=${selectedPlan}`);
+      if (result.success) {
+        // Show email verification success message
+        setUserEmail(formData.email);
+        setSignupSuccess(true);
+        console.log('✅ Signup successful - awaiting email verification');
+      } else {
+        // Handle signup failure
+        setErrors({ submit: result.error || 'Signup failed. Please try again.' });
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      setErrors({
+        submit: error.message || 'An unexpected error occurred. Please try again.'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderStepIndicator = () => {
@@ -287,16 +284,90 @@ export default function SignUp() {
         </div>
 
         <Card className="shadow-xl">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl">Create Your Account</CardTitle>
-            <CardDescription className="flex items-center justify-center gap-2 mt-2">
-              <Clock className="w-4 h-4" />
-              <span>Takes about 2 minutes</span>
-            </CardDescription>
-            <CardDescription>
-              {selectedPlan === 'free' ? 'Start your 14-day free trial' : 'Get started with Care Connect Pro'}
-            </CardDescription>
-          </CardHeader>
+          {signupSuccess ? (
+            // Success state - email verification instructions
+            <>
+              <CardHeader className="text-center">
+                <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle2 className="w-10 h-10 text-green-600" />
+                </div>
+                <CardTitle className="text-3xl">Check Your Email!</CardTitle>
+                <CardDescription className="text-base mt-2">
+                  We've sent a verification link to
+                </CardDescription>
+                <p className="text-lg font-semibold text-teal-600 mt-1">{userEmail}</p>
+              </CardHeader>
+
+              <CardContent className="space-y-6">
+                <Alert className="bg-blue-50 border-blue-200">
+                  <Mail className="h-4 w-4 text-blue-600" />
+                  <AlertDescription>
+                    <p className="font-medium text-blue-900 mb-2">Next steps:</p>
+                    <ol className="text-sm space-y-1 list-decimal list-inside">
+                      <li>Check your inbox (and spam folder)</li>
+                      <li>Click the verification link in the email</li>
+                      <li>Return here to sign in to your account</li>
+                    </ol>
+                  </AlertDescription>
+                </Alert>
+
+                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                  <p className="text-sm font-medium">What happens next?</p>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>Your organization <strong>{formData.organizationName}</strong> has been created</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>You'll have owner access with full permissions</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <span>Your {selectedPlan === 'free' ? '14-day free trial' : plan.name + ' subscription'} will begin after verification</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="text-center pt-4">
+                  <p className="text-sm text-gray-600 mb-4">
+                    Already verified your email?
+                  </p>
+                  <Link to={createPageUrl("AgencyLogin")}>
+                    <Button className="bg-gradient-to-r from-teal-600 to-blue-600">
+                      Sign In to Your Account
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+
+                <div className="text-center text-sm text-gray-500">
+                  Didn't receive the email?{' '}
+                  <button
+                    className="text-teal-600 hover:underline"
+                    onClick={() => {
+                      // Could implement resend verification email here
+                      alert('Resend verification feature coming soon!');
+                    }}
+                  >
+                    Resend verification email
+                  </button>
+                </div>
+              </CardContent>
+            </>
+          ) : (
+            // Normal signup form
+            <>
+              <CardHeader className="text-center">
+                <CardTitle className="text-3xl">Create Your Account</CardTitle>
+                <CardDescription className="flex items-center justify-center gap-2 mt-2">
+                  <Clock className="w-4 h-4" />
+                  <span>Takes about 2 minutes</span>
+                </CardDescription>
+                <CardDescription>
+                  {selectedPlan === 'free' ? 'Start your 14-day free trial' : 'Get started with Care Connect Pro'}
+                </CardDescription>
+              </CardHeader>
 
           <CardContent>
             {renderStepIndicator()}
@@ -656,7 +727,19 @@ export default function SignUp() {
                 </div>
               </div>
             </form>
+
+            {/* Display submission errors */}
+            {errors.submit && (
+              <Alert className="bg-red-50 border-red-200 mt-4">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  {errors.submit}
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
+            </>
+          )}
         </Card>
 
         {/* Security Badge */}

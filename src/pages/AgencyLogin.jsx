@@ -52,17 +52,7 @@ export default function AgencyLogin() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check localStorage first
-        const isAuth = localStorage.getItem('isAuthenticated');
-        const currentUser = localStorage.getItem('currentUser');
-
-        if (isAuth === 'true' && currentUser) {
-          setIsAuthenticated(true);
-          navigate(createPageUrl("Dashboard"), { replace: true });
-          return;
-        }
-
-        // Fallback to base44 auth
+        // Use Supabase Auth session only
         const authenticated = await base44.auth.isAuthenticated();
         if (authenticated) {
           setIsAuthenticated(true);
@@ -147,59 +137,40 @@ export default function AgencyLogin() {
     setError("");
 
     try {
-      // Check persistent user registry for registered accounts
-      const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-
-      // Find user by email (case insensitive)
-      const foundUser = registeredUsers.find(
-        user => user.email.toLowerCase() === email.toLowerCase()
-      );
-
-      if (foundUser) {
-        // Verify password (in production, this would compare against a hash)
-        if (foundUser.password === password) {
-          toast.success("Welcome back! Redirecting to dashboard...");
-
-          // Create session by setting currentUser and isAuthenticated
-          localStorage.setItem('currentUser', JSON.stringify(foundUser));
-          localStorage.setItem('isAuthenticated', 'true');
-
-          // Save to localStorage if remember me is checked
-          if (rememberMe) {
-            localStorage.setItem("rememberMe", "true");
-            localStorage.setItem("userEmail", email);
-          }
-
-          setTimeout(() => {
-            navigate(createPageUrl("Dashboard"), { replace: true });
-          }, 1000);
-          return;
-        } else {
-          // Wrong password
-          throw new Error("Invalid password");
-        }
-      }
-
-      // Fallback to base44 auth for existing users
+      // Use Supabase Auth login
       const result = await base44.auth.login({ email, password });
 
       if (result.success) {
         toast.success("Welcome back! Redirecting to dashboard...");
 
-        // Save to localStorage if remember me is checked
+        // Save email to localStorage if remember me is checked (for form auto-fill only)
         if (rememberMe) {
           localStorage.setItem("rememberMe", "true");
           localStorage.setItem("userEmail", email);
+        } else {
+          localStorage.removeItem("rememberMe");
+          localStorage.removeItem("userEmail");
         }
 
+        // Navigate to dashboard
         setTimeout(() => {
           navigate(createPageUrl("Dashboard"), { replace: true });
         }, 1000);
+      } else {
+        throw new Error(result.error || "Login failed");
       }
     } catch (error) {
       console.error("Login error:", error);
-      setError("Invalid credentials. Please check your email and password.");
-      toast.error("Invalid credentials. Please try again.");
+
+      // Check if it's an email verification error
+      if (error.message?.includes('Email not confirmed')) {
+        setError("Please verify your email address before signing in. Check your inbox for the verification link.");
+        toast.error("Email not verified. Please check your inbox.");
+      } else {
+        setError("Invalid credentials. Please check your email and password.");
+        toast.error("Invalid credentials. Please try again.");
+      }
+    } finally {
       setLoading(false);
     }
   };

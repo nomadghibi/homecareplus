@@ -1,8 +1,8 @@
-// Supabase API Client - Replacement for mockClient.js
+// Supabase API Client - Production Multi-Tenant Implementation
 import { supabase, handleSupabaseError } from './supabaseClient';
 
 // ============================================
-// ENTITY CLASS - Handles CRUD operations for all entities
+// ENTITY CLASS - Handles CRUD operations with multi-tenant support
 // ============================================
 
 class SupabaseEntity {
@@ -10,7 +10,22 @@ class SupabaseEntity {
     this.tableName = tableName;
   }
 
+  // Get current user's organization_id
+  async _getOrganizationId() {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_user_organization_id');
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.warn('Could not get organization_id:', error);
+      return null;
+    }
+  }
+
   // List entities with optional filtering, sorting, and pagination
+  // RLS automatically filters by organization_id
   async list(options = {}) {
     try {
       let query = supabase.from(this.tableName).select('*');
@@ -69,12 +84,21 @@ class SupabaseEntity {
     }
   }
 
-  // Create new entity
+  // Create new entity (automatically includes organization_id)
   async create(entityData) {
     try {
+      // Get organization_id and add it to the data
+      const organizationId = await this._getOrganizationId();
+
+      const dataToInsert = {
+        ...entityData,
+        // Add organization_id if this table has that column
+        ...(organizationId && { organization_id: organizationId })
+      };
+
       const { data, error } = await supabase
         .from(this.tableName)
-        .insert([entityData])
+        .insert([dataToInsert])
         .select()
         .single();
 
@@ -122,7 +146,6 @@ class SupabaseEntity {
 // ============================================
 // TABLE NAME MAPPING
 // ============================================
-// Map entity names to database table names (snake_case)
 const tableNameMap = {
   'Client': 'clients',
   'Caregiver': 'caregivers',
@@ -151,7 +174,7 @@ Object.entries(tableNameMap).forEach(([entityName, tableName]) => {
 });
 
 // ============================================
-// AUTHENTICATION METHODS
+// AUTHENTICATION METHODS - Multi-Tenant Aware
 // ============================================
 
 const auth = {
@@ -161,22 +184,52 @@ const auth = {
       const { email, password } = credentials;
 
       // Sign in with Supabase Auth
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
 
+      // Get full user profile with organization context
+      const { data: profile, error: profileError } = await supabase
+        .rpc('get_current_user_profile');
+
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+        // Fallback to basic user data if profile fetch fails
+        return {
+          success: true,
+          user: {
+            id: authData.user.id,
+            email: authData.user.email,
+            name: authData.user.user_metadata?.name || authData.user.email,
+            role: authData.user.user_metadata?.role || 'User',
+          },
+          token: authData.session.access_token,
+        };
+      }
+
+      // Return enriched user data with organization context
       return {
         success: true,
         user: {
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.user_metadata?.name || data.user.email,
-          role: data.user.user_metadata?.role || 'User',
+          id: profile.user_id,
+          email: profile.email,
+          firstName: profile.first_name,
+          lastName: profile.last_name,
+          displayName: profile.display_name,
+          name: profile.display_name || profile.email,
+          role: profile.role,
+          organizationId: profile.organization_id,
+          organizationName: profile.organization_name,
+          organizationSlug: profile.organization_slug,
+          subscriptionStatus: profile.subscription_status,
+          subscriptionPlan: profile.subscription_plan,
+          trialEndsAt: profile.trial_ends_at,
+          isPrimaryOwner: profile.is_primary_owner,
         },
-        token: data.session.access_token,
+        token: authData.session.access_token,
       };
     } catch (error) {
       console.error('Login error:', error);
@@ -184,33 +237,52 @@ const auth = {
     }
   },
 
-  // Sign up new user
+  // Sign up new user with organization creation
   async signup(credentials) {
     try {
-      const { email, password, name, role } = credentials;
+      const {
+        email,
+        password,
+        firstName,
+        lastName,
+        organizationName,
+        organizationSlug,
+      } = credentials;
 
-      const { data, error } = await supabase.auth.signUp({
+      // Sign up with Supabase Auth
+      // The database trigger will auto-create organization and user_profile
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            name,
-            role: role || 'User',
+            first_name: firstName,
+            last_name: lastName,
+            organization_name: organizationName,
+            organization_slug: organizationSlug,
           },
         },
       });
 
-      if (error) throw error;
+      if (authError) {
+        console.error('Supabase Auth Error:', authError);
+        throw authError;
+      }
 
+      console.log('✅ Supabase signup successful:', authData);
+
+      // Return success - user will need to verify email before logging in
       return {
         success: true,
         user: {
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.user_metadata?.name || name,
-          role: data.user.user_metadata?.role || role || 'User',
+          id: authData.user.id,
+          email: authData.user.email,
+          firstName: firstName,
+          lastName: lastName,
+          name: `${firstName} ${lastName}`,
         },
-        token: data.session?.access_token,
+        requiresEmailVerification: true,
+        message: 'Please check your email to verify your account',
       };
     } catch (error) {
       console.error('Signup error:', error);
@@ -223,6 +295,11 @@ const auth = {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+
+      // Clear any local storage
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('isAuthenticated');
+
       return { success: true };
     } catch (error) {
       console.error('Logout error:', error);
@@ -230,19 +307,47 @@ const auth = {
     }
   },
 
-  // Get current authenticated user
+  // Get current authenticated user with full profile
   async getCurrentUser() {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      // First check if user is authenticated
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-      if (error) throw error;
+      if (userError) throw userError;
       if (!user) return null;
 
+      // Get full user profile with organization context
+      const { data: profile, error: profileError } = await supabase
+        .rpc('get_current_user_profile');
+
+      if (profileError || !profile) {
+        // Fallback to basic user data
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || user.email,
+          role: user.user_metadata?.role || 'User',
+        };
+      }
+
+      // Return full profile with organization context
       return {
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name || user.email,
-        role: user.user_metadata?.role || 'User',
+        id: profile.user_id,
+        email: profile.email,
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        displayName: profile.display_name,
+        name: profile.display_name || profile.email,
+        role: profile.role,
+        organizationId: profile.organization_id,
+        organizationName: profile.organization_name,
+        organizationSlug: profile.organization_slug,
+        subscriptionStatus: profile.subscription_status,
+        subscriptionPlan: profile.subscription_plan,
+        trialEndsAt: profile.trial_ends_at,
+        isPrimaryOwner: profile.is_primary_owner,
+        avatarUrl: profile.avatar_url,
+        phone: profile.phone,
       };
     } catch (error) {
       console.error('Get current user error:', error);
@@ -277,10 +382,75 @@ const auth = {
     }
   },
 
+  // Get organization subscription info
+  async getSubscription() {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_organization_subscription');
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Get subscription error:', error);
+      return null;
+    }
+  },
+
+  // Check if trial has expired
+  async isTrialExpired() {
+    try {
+      const { data, error } = await supabase
+        .rpc('is_trial_expired');
+
+      if (error) throw error;
+      return data || false;
+    } catch (error) {
+      console.error('Check trial expired error:', error);
+      return false;
+    }
+  },
+
+  // Password reset request
+  async resetPasswordRequest(email) {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        message: 'Password reset email sent. Please check your inbox.',
+      };
+    } catch (error) {
+      console.error('Password reset request error:', error);
+      throw new Error(error.message || 'Password reset failed');
+    }
+  },
+
+  // Update password (after reset link click)
+  async updatePassword(newPassword) {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        message: 'Password updated successfully',
+      };
+    } catch (error) {
+      console.error('Update password error:', error);
+      throw new Error(error.message || 'Password update failed');
+    }
+  },
+
   // Redirect to login (for compatibility)
-  async redirectToLogin(redirectUrl) {
+  redirectToLogin(redirectUrl) {
     console.log('Redirect to login with:', redirectUrl);
-    // In a real app, you might want to store redirectUrl for post-login redirect
     return { redirectUrl };
   },
 };
@@ -318,9 +488,12 @@ const integration = {
   file: {
     async upload(file, bucket = 'documents') {
       try {
+        // Get organization_id for folder structure
+        const { data: orgId } = await supabase.rpc('get_user_organization_id');
+
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `${bucket}/${fileName}`;
+        const filePath = `${orgId}/${fileName}`;
 
         const { data, error } = await supabase.storage
           .from(bucket)
@@ -328,15 +501,15 @@ const integration = {
 
         if (error) throw error;
 
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
+        // Get public URL (for public buckets like avatars)
+        const { data: urlData } = supabase.storage
           .from(bucket)
           .getPublicUrl(filePath);
 
         return {
           success: true,
           fileId: data.path,
-          url: publicUrl,
+          url: urlData.publicUrl,
           path: filePath,
         };
       } catch (error) {
@@ -372,15 +545,32 @@ const integration = {
         throw new Error(error.message || 'File delete failed');
       }
     },
+
+    // Get signed URL for private files
+    async getSignedUrl(filePath, bucket = 'documents', expiresIn = 3600) {
+      try {
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .createSignedUrl(filePath, expiresIn);
+
+        if (error) throw error;
+        return data.signedUrl;
+      } catch (error) {
+        console.error('Get signed URL error:', error);
+        throw new Error(error.message || 'Failed to get signed URL');
+      }
+    },
   },
 };
 
 // ============================================
-// DASHBOARD STATISTICS
+// DASHBOARD STATISTICS - Tenant-aware
 // ============================================
 
 async function getStats() {
   try {
+    // RLS automatically filters all queries by organization_id
+
     // Get active clients count
     const { count: activeClients } = await supabase
       .from('clients')
@@ -407,7 +597,7 @@ async function getStats() {
       .select('*', { count: 'exact', head: true })
       .in('status', ['draft', 'submitted', 'pending']);
 
-    // Calculate fill rate (visits with caregivers / total visits)
+    // Calculate fill rate
     const { data: totalVisits } = await supabase
       .from('visits')
       .select('caregiver_id', { count: 'exact' })
@@ -438,7 +628,7 @@ async function getStats() {
       evvMatchRate = (verifiedVisits / completedVisits.length) * 100;
     }
 
-    // Calculate Days Sales Outstanding (simplified - last 30 days)
+    // Calculate Days Sales Outstanding
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 

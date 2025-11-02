@@ -50,85 +50,34 @@ export default function Layout({ children, currentPageName }) {
   const [currentUser, setCurrentUser] = React.useState(null);
   const navigate = useNavigate();
 
-  // Fetch current user on mount (only for non-public pages)
+  // Fetch current user from Supabase session (only for non-public pages)
   React.useEffect(() => {
     if (isPublicPage) return;
 
     const fetchUser = async () => {
       try {
-        console.log('[Layout] Fetching current user...');
+        console.log('[Layout] Fetching current user from Supabase...');
 
-        // First check localStorage for newly created user
-        const storedUser = localStorage.getItem('currentUser');
-        console.log('[Layout] Stored user in localStorage:', storedUser ? 'Found' : 'Not found');
-
-        if (storedUser) {
-          try {
-            const userData = JSON.parse(storedUser);
-            console.log('[Layout] Parsed user data:', userData);
-
-            // Build user object with fallbacks
-            const userObj = {
-              email: userData.email || userData.userEmail || 'user@example.com',
-              name: userData.name ||
-                    (userData.firstName && userData.lastName
-                      ? `${userData.firstName} ${userData.lastName}`
-                      : userData.organizationName || 'User'),
-              firstName: userData.firstName || '',
-              lastName: userData.lastName || '',
-              organization: userData.organizationName || userData.organization || '',
-              role: userData.role || 'Admin'
-            };
-
-            console.log('[Layout] Setting current user:', userObj);
-            setCurrentUser(userObj);
-            return;
-          } catch (parseError) {
-            console.error('[Layout] Error parsing stored user:', parseError);
-          }
-        }
-
-        // Check if user is authenticated
-        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-        console.log('[Layout] Is authenticated:', isAuthenticated);
-
-        if (isAuthenticated) {
-          // Try to get email from other storage keys
-          const userEmail = localStorage.getItem('userEmail') || localStorage.getItem('email');
-          if (userEmail) {
-            console.log('[Layout] Found user email:', userEmail);
-            setCurrentUser({
-              email: userEmail,
-              name: userEmail.split('@')[0] || 'User',
-              role: 'Admin'
-            });
-            return;
-          }
-        }
-
-        // Fallback to base44 auth
-        console.log('[Layout] Trying base44 auth...');
+        // Get user from Supabase Auth session
         const user = await base44.auth.getCurrentUser();
-        console.log('[Layout] Base44 user:', user);
-        setCurrentUser(user);
+
+        if (user) {
+          console.log('[Layout] User authenticated:', user);
+          setCurrentUser(user);
+        } else {
+          // Not authenticated - redirect to login
+          console.log('[Layout] No authenticated user, redirecting to login');
+          navigate(createPageUrl("AgencyLogin"), { replace: true });
+        }
       } catch (error) {
         console.error("[Layout] Failed to fetch current user:", error);
-
-        // Last resort: check if we're authenticated at all
-        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-        if (isAuthenticated) {
-          console.log('[Layout] Setting default authenticated user');
-          setCurrentUser({
-            email: 'user@careconnect.com',
-            name: 'Agency User',
-            role: 'Admin'
-          });
-        }
+        // On error, redirect to login
+        navigate(createPageUrl("AgencyLogin"), { replace: true });
       }
     };
 
     fetchUser();
-  }, [isPublicPage]);
+  }, [isPublicPage, navigate]);
 
   // Early return for public pages (after all hooks have been called)
   if (isPublicPage) {
@@ -142,45 +91,20 @@ export default function Layout({ children, currentPageName }) {
 
   const handleLogout = async () => {
     try {
-      // Preserve registered users before clearing session data
-      const registeredUsers = localStorage.getItem('registeredUsers');
+      console.log('[Layout] Logging out from Supabase...');
 
-      // Clear session data only (NOT registered users)
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('agency_info');
-      localStorage.removeItem('onboarding_completed');
-      localStorage.removeItem('rememberMe');
-      localStorage.removeItem('userEmail');
-
-      // Restore registered users
-      if (registeredUsers) {
-        localStorage.setItem('registeredUsers', registeredUsers);
-      }
-
-      // Try base44 logout (will fail gracefully if not available)
-      try {
-        await base44.auth.logout();
-      } catch (error) {
-        console.log('Base44 logout not available, continuing with localStorage cleanup');
-      }
+      // Call Supabase Auth logout (clears session)
+      await base44.auth.logout();
 
       // Clear user state
       setCurrentUser(null);
 
       // Navigate to landing page
       navigate(createPageUrl("Landing"), { replace: true });
-
-      // Force page reload to ensure clean state
-      window.location.href = createPageUrl("Landing");
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if there's an error, preserve users and redirect
-      const registeredUsers = localStorage.getItem('registeredUsers');
-      localStorage.clear();
-      if (registeredUsers) {
-        localStorage.setItem('registeredUsers', registeredUsers);
-      }
+      // Even if there's an error, clear state and redirect
+      setCurrentUser(null);
       window.location.href = createPageUrl("Landing");
     }
   };
