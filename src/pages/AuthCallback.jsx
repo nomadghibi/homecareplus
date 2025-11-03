@@ -55,16 +55,20 @@ export default function AuthCallback() {
           // Email confirmation callback
           if (session) {
             setStatus('success');
-            setMessage('Email confirmed successfully! Redirecting to login...');
+            setMessage('Email confirmed successfully! Please sign in with your credentials.');
             console.log('[AuthCallback] Email confirmed for user:', session.user.email);
+
+            // Sign out the user - they should log in with password for security
+            await supabase.auth.signOut();
+            console.log('[AuthCallback] User signed out - must log in with password');
 
             // Clear the hash from URL
             window.history.replaceState(null, '', window.location.pathname);
 
-            // Wait 2 seconds then redirect to login
+            // Wait 3 seconds then redirect to login
             setTimeout(() => {
               navigate(createPageUrl('AgencyLogin'));
-            }, 2000);
+            }, 3000);
           } else {
             throw new Error('No session established after token processing');
           }
