@@ -170,12 +170,12 @@ export default function AgencyLogin() {
   };
 
   // Handle Signup - redirect to full signup page
-  const handleSignup = async (e) => {
-    e.preventDefault();
+  const handleSignup = (e) => {
+    if (e) e.preventDefault();
 
     // Redirect to the full signup page with organization details
-    toast.info("Redirecting to complete signup...");
-    navigate(createPageUrl("SignUp"));
+    console.log('Navigating to signup page...');
+    navigate('/signup');
   };
 
   // Handle Forgot Password
