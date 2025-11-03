@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Heart,
   Building2,
@@ -35,6 +36,8 @@ export default function AgencyLogin() {
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [signupEmail, setSignupEmail] = useState("");
 
   // Form fields
   const [email, setEmail] = useState("");
@@ -166,44 +169,13 @@ export default function AgencyLogin() {
     }
   };
 
-  // Handle Signup
+  // Handle Signup - redirect to full signup page
   const handleSignup = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      toast.error("Please fix the errors in the form");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const result = await contextSignup({
-        email,
-        password,
-        name,
-        role: "Admin"
-      });
-
-      if (result.success) {
-        toast.success("Account created successfully! Please check your email to verify your account.");
-
-        // Switch to login tab after 2 seconds
-        setTimeout(() => {
-          setActiveTab("login");
-          setPassword("");
-          setConfirmPassword("");
-          toast.info("You can now sign in with your credentials");
-        }, 2000);
-      }
-    } catch (error) {
-      console.error("Signup error:", error);
-      setError(error.message || "Signup failed. Please try again.");
-      toast.error(error.message || "Signup failed");
-    } finally {
-      setLoading(false);
-    }
+    // Redirect to the full signup page with organization details
+    toast.info("Redirecting to complete signup...");
+    navigate(createPageUrl("SignUp"));
   };
 
   // Handle Forgot Password
@@ -475,6 +447,52 @@ export default function AgencyLogin() {
 
               {/* Signup Tab */}
               <TabsContent value="signup">
+                <div className="space-y-6">
+                  <Alert className="bg-gradient-to-r from-blue-50 to-teal-50 border-blue-200">
+                    <Building2 className="h-5 w-5 text-blue-600" />
+                    <AlertDescription>
+                      <p className="text-sm text-blue-900 font-medium mb-2">
+                        Ready to create your organization?
+                      </p>
+                      <p className="text-sm text-blue-800">
+                        Our complete signup process will guide you through setting up your organization with all the necessary details. You'll get:
+                      </p>
+                      <ul className="mt-2 space-y-1 text-sm text-blue-800">
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                          30-day free trial with full access
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                          Custom organization setup
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                          Email verification for security
+                        </li>
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+
+                  <Button
+                    type="button"
+                    onClick={handleSignup}
+                    className="w-full bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700 h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+                  >
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Continue to Complete Signup
+                  </Button>
+
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-xs text-gray-600 text-center">
+                      Already have an account? Switch to the <strong>Login</strong> tab above
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Old signup form - now hidden, keeping for reference */}
+              {false && (
                 <form onSubmit={handleSignup} className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name" className="text-sm font-medium">
@@ -665,7 +683,7 @@ export default function AgencyLogin() {
                     </ul>
                   </div>
                 </form>
-              </TabsContent>
+              )}
             </Tabs>
 
             <div className="mt-6 text-center text-xs text-slate-500">
