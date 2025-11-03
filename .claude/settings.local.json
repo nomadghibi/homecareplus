@@ -28,7 +28,12 @@
       "WebFetch(domain:www.youtube.com)",
       "Bash(supabase:*)",
       "Bash(npm --version)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git remote remove:*)",
+      "Bash(git remote rename:*)",
+      "Bash(git fetch:*)",
+      "Bash(npx supabase:*)"
     ],
     "deny": [],
     "ask": []
