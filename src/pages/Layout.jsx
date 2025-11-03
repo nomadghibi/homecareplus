@@ -2,7 +2,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import NotificationCenter from "@/components/notifications/NotificationCenter";
 import {
@@ -47,37 +47,26 @@ export default function Layout({ children, currentPageName }) {
   const isCaregiverPage = caregiverPages.includes(currentPageName);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-  const [currentUser, setCurrentUser] = React.useState(null);
   const navigate = useNavigate();
 
-  // Fetch current user from Supabase session (only for non-public pages)
+  // Use auth context to get user and loading state
+  const { user: currentUser, isLoading, isAuthenticated } = useAuth();
+
+  // Redirect to login if not authenticated (only for non-public pages)
   React.useEffect(() => {
-    if (isPublicPage) return;
+    if (isPublicPage || isCaregiverPage) return;
 
-    const fetchUser = async () => {
-      try {
-        console.log('[Layout] Fetching current user from Supabase...');
+    // Wait for auth check to complete
+    if (isLoading) return;
 
-        // Get user from Supabase Auth session
-        const user = await base44.auth.getCurrentUser();
-
-        if (user) {
-          console.log('[Layout] User authenticated:', user);
-          setCurrentUser(user);
-        } else {
-          // Not authenticated - redirect to login
-          console.log('[Layout] No authenticated user, redirecting to login');
-          navigate(createPageUrl("AgencyLogin"), { replace: true });
-        }
-      } catch (error) {
-        console.error("[Layout] Failed to fetch current user:", error);
-        // On error, redirect to login
-        navigate(createPageUrl("AgencyLogin"), { replace: true });
-      }
-    };
-
-    fetchUser();
-  }, [isPublicPage, navigate]);
+    // If not authenticated, redirect to login
+    if (!isAuthenticated) {
+      console.log('[Layout] No authenticated user, redirecting to login');
+      navigate(createPageUrl("AgencyLogin"), { replace: true });
+    } else {
+      console.log('[Layout] User authenticated:', currentUser);
+    }
+  }, [isPublicPage, isCaregiverPage, isLoading, isAuthenticated, currentUser, navigate]);
 
   // Early return for public pages (after all hooks have been called)
   if (isPublicPage) {
@@ -89,22 +78,20 @@ export default function Layout({ children, currentPageName }) {
     return <>{children}</>;
   }
 
+  const { logout } = useAuth();
+
   const handleLogout = async () => {
     try {
-      console.log('[Layout] Logging out from Supabase...');
+      console.log('[Layout] Logging out...');
 
-      // Call Supabase Auth logout (clears session)
-      await base44.auth.logout();
-
-      // Clear user state
-      setCurrentUser(null);
+      // Call logout from auth context (clears session and state)
+      await logout();
 
       // Navigate to landing page
       navigate(createPageUrl("Landing"), { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
-      // Even if there's an error, clear state and redirect
-      setCurrentUser(null);
+      // Even if there's an error, redirect to landing
       window.location.href = createPageUrl("Landing");
     }
   };

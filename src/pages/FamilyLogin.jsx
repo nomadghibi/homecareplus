@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -12,36 +12,29 @@ import { Link } from "react-router-dom";
 
 export default function FamilyLogin() {
   const [loading, setLoading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const { login: contextLogin, isAuthenticated } = useAuth();
 
+  // Redirect if already authenticated
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const authenticated = await base44.auth.isAuthenticated();
-        if (authenticated) {
-          setIsAuthenticated(true);
-          navigate(createPageUrl("FamilyPortal"), { replace: true });
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-      }
-    };
-    checkAuth();
-  }, [navigate]);
+    if (isAuthenticated) {
+      navigate(createPageUrl("FamilyPortal"), { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const result = await base44.auth.login({ email, password });
+      const result = await contextLogin({ email, password });
       if (result.success) {
         navigate(createPageUrl("FamilyPortal"), { replace: true });
       }
     } catch (error) {
       console.error("Login error:", error);
+    } finally {
       setLoading(false);
     }
   };

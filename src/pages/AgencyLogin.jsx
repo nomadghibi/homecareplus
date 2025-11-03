@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -28,7 +29,6 @@ import { toast } from "sonner";
 
 export default function AgencyLogin() {
   const [loading, setLoading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
@@ -47,23 +47,14 @@ export default function AgencyLogin() {
   const [fieldErrors, setFieldErrors] = useState({});
 
   const navigate = useNavigate();
+  const { login: contextLogin, signup: contextSignup, isAuthenticated } = useAuth();
 
-  // Check if already logged in
+  // Check if already logged in - redirect to dashboard
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Use Supabase Auth session only
-        const authenticated = await base44.auth.isAuthenticated();
-        if (authenticated) {
-          setIsAuthenticated(true);
-          navigate(createPageUrl("Dashboard"), { replace: true });
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-      }
-    };
-    checkAuth();
-  }, [navigate]);
+    if (isAuthenticated) {
+      navigate(createPageUrl("Dashboard"), { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   // Password strength checker
   const getPasswordStrength = (pass) => {
@@ -137,8 +128,8 @@ export default function AgencyLogin() {
     setError("");
 
     try {
-      // Use Supabase Auth login
-      const result = await base44.auth.login({ email, password });
+      // Use auth context login
+      const result = await contextLogin({ email, password });
 
       if (result.success) {
         toast.success("Welcome back! Redirecting to dashboard...");
@@ -188,7 +179,7 @@ export default function AgencyLogin() {
     setError("");
 
     try {
-      const result = await base44.auth.signup({
+      const result = await contextSignup({
         email,
         password,
         name,
