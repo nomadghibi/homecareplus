@@ -54,9 +54,15 @@ export default function AuthCallback() {
         if (type === 'signup' || type === 'email') {
           // Email confirmation callback
           if (session) {
+            console.log('[AuthCallback] Email confirmed for user:', session.user.email);
+            console.log('[AuthCallback] Email confirmed at:', session.user.email_confirmed_at);
+
+            // Wait for database to update email_confirmed_at field
+            // This is critical - Supabase needs time to persist the verification
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             setStatus('success');
             setMessage('Email confirmed successfully! Please sign in with your credentials.');
-            console.log('[AuthCallback] Email confirmed for user:', session.user.email);
 
             // Sign out the user - they should log in with password for security
             await supabase.auth.signOut();
