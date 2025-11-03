@@ -16,7 +16,19 @@
       "Bash(git push:*)",
       "Bash(start.bat)",
       "Bash(cmd /c start.bat)",
-      "Read(//c/**)"
+      "Read(//c/**)",
+      "Bash(npm run build:*)",
+      "Bash(vercel login:*)",
+      "Bash(vercel:*)",
+      "Bash(cd:*)",
+      "Bash(mkdir:*)",
+      "Bash(supabase login:*)",
+      "Bash(scoop install:*)",
+      "Bash(npx supabase@latest:*)",
+      "WebFetch(domain:www.youtube.com)",
+      "Bash(supabase:*)",
+      "Bash(npm --version)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
